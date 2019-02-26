@@ -1,27 +1,24 @@
 # easywx
 
-Summary
--------
-A Simple Wechat Toolkit for Java.
-
-Prerequisites
+环境
 -------------
 - JDK 7
+- Servlet 3.1
 
-Switching to easywx
+如何使用
 -----------------------
 
-* Add dependency to project in POM:
+* 添加dependency到POM文件::
 
 ```
 <dependency>
-    <groupId>com.github.yydf</groupId>
+    <groupId>cn.4coder</groupId>
     <artifactId>easywx</artifactId>
     <version>0.0.1</version>
 </dependency>
 ```
 
-* Coding:
+* 编码:
 
 ```
 WXApi.forMP(appId, appSecret);
