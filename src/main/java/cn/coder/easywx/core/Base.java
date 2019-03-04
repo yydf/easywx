@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 import cn.coder.easywx.util.JSONUtils;
 
 public class Base {
-	static final Logger logger = LoggerFactory.getLogger(Base.class);
+	private static final Logger logger = LoggerFactory.getLogger(Base.class);
 
 	protected static String getRandamStr() {
 		return UUID.randomUUID().toString().replace("-", "");
