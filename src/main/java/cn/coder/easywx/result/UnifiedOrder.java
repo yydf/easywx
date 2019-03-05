@@ -8,6 +8,7 @@ public class UnifiedOrder {
 	public String body;
 	public String spbill_create_ip;
 	public String sub_mch_id;
+	public String trade_type;
 	
 	public static UnifiedOrder test() {
 		return test(null);

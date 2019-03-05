@@ -14,6 +14,7 @@ public class MP extends Base {
 	private static final String URL_TOKEN = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=%s&secret=%s";
 	private final String appId;
 	private final String appSecret;
+	private Payment _pay;
 	private String _token;
 	private long _tokenTime;
 
@@ -32,6 +33,16 @@ public class MP extends Base {
 			}
 		}
 		return _token;
+	}
+
+	public void forPayment(String mchId, String apiKey, String callbackUrl) {
+		this._pay = new Payment(this.appId, mchId, apiKey, callbackUrl);
+	}
+	
+	public Payment pay() {
+		if (this._pay == null)
+			throw new NullPointerException("The payment can not be null");
+		return _pay;
 	}
 
 	public interface MsgEvent {

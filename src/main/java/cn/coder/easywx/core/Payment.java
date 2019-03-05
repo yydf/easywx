@@ -107,11 +107,16 @@ public class Payment extends Base {
 		if (order.sub_mch_id != null)
 			map.put("sub_mch_id", order.sub_mch_id);// 子商户订单号
 
-		if (order.openid == null)
-			map.put("trade_type", "APP");// 交易类型
+		// 交易类型
+		if (order.trade_type != null)
+			map.put("trade_type", order.trade_type);
 		else {
-			map.put("trade_type", "JSAPI");// 交易类型
-			map.put("openid", order.openid);
+			if (order.openid == null)
+				map.put("trade_type", "APP");
+			else {
+				map.put("trade_type", "JSAPI");
+				map.put("openid", order.openid);
+			}
 		}
 
 		map.put("sign", SignUtils.getSign(map, this.apiKey));// 签名
@@ -124,8 +129,16 @@ public class Payment extends Base {
 		String returnCode = getValue(result, "return_code");
 		String resultCode = getValue(result, "result_code");
 		if ("SUCCESS".equals(returnCode) && "SUCCESS".equals(resultCode)) {
-			String prepayid = getValue(result, "prepay_id");
 			HashMap<String, Object> maplast = new HashMap<>();
+			String tradeType = getValue(result, "trade_type");
+			String prepayid = getValue(result, "prepay_id");
+			if ("NATIVE".equals(tradeType)) {
+				maplast.put("appid", this.appId);
+				maplast.put("partnerid", this.mchId);
+				maplast.put("prepayid", prepayid);
+				maplast.put("code_url", getValue(result, "code_url"));
+				return maplast;
+			}
 			if (order.openid == null) {
 				maplast.put("appid", this.appId);
 				maplast.put("noncestr", getRandamStr());

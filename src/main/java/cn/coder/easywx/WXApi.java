@@ -73,6 +73,13 @@ public class WXApi {
 		return corp;
 	}
 
+	public static Payment mpPay() {
+		Payment pay = mp.pay();
+		if (pay == null)
+			throw new NullPointerException("The payment can not be null");
+		return pay;
+	}
+	
 	public static Payment appPay() {
 		Payment pay = miniProgram.pay();
 		if (pay == null)
