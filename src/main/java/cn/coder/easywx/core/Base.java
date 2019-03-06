@@ -35,6 +35,12 @@ public class Base {
 		return null;
 	}
 
+	protected static boolean valid(String json, String key) {
+		if(json == null || "".equals(json))
+			return false;
+		return json.contains("\""+key+"\"");
+	}
+	
 	protected static String getJSON(String url) {
 		StringBuilder sb = new StringBuilder();
 		try {

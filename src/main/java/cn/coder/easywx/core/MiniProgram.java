@@ -32,7 +32,7 @@ public class MiniProgram extends Base {
 	public WXSession code2Session(String code) {
 		String json = getJSON(String.format(URL_CODE2SESSION, appId, appSecret, code));
 		logger.debug("[code2Session]" + json);
-		if (json != null && json.contains("\"openid\"")) {
+		if (valid(json, "openid")) {
 			WXSession session = new WXSession();
 			session.openid = JSONUtils.getString(json, "openid");
 			session.session_key = JSONUtils.getString(json, "session_key");

@@ -1,6 +1,8 @@
 package cn.coder.easywx.util;
 
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.TreeMap;
@@ -13,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 public class SignUtils {
 	private static final Logger logger = LoggerFactory.getLogger(SignUtils.class);
+	private static MessageDigest sha1MD;
 
 	public static String decryptData(byte[] data, byte[] key) {
 		try {
@@ -68,6 +71,22 @@ public class SignUtils {
 		sb.append("key=");
 		sb.append(apiKey);
 		return encodeByMD5(sb.toString()).toUpperCase();
+	}
+
+	public static String SHA1(String str) {
+		if (null == sha1MD) {
+			try {
+				sha1MD = MessageDigest.getInstance("SHA-1");
+			} catch (NoSuchAlgorithmException e) {
+				return null;
+			}
+		}
+		try {
+			sha1MD.update(str.getBytes("utf-8"), 0, str.length());
+		} catch (UnsupportedEncodingException e) {
+			sha1MD.update(str.getBytes(), 0, str.length());
+		}
+		return byteToHex(sha1MD.digest());
 	}
 
 }

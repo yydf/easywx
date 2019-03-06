@@ -20,7 +20,7 @@ public class Open extends Base {
 	public String getOpenId(String code) {
 		String json = getJSON(String.format(URL_OPENID, appId, appSecret, code));
 		logger.debug("[OPENID]" + json);
-		if (json != null && json.contains("\"openid\""))
+		if (valid(json, "openid"))
 			return JSONUtils.getString(json, "openid");
 		return null;
 	}
