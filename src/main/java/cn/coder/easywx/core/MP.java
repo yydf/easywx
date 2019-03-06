@@ -1,5 +1,7 @@
 package cn.coder.easywx.core;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -47,7 +49,7 @@ public class MP extends Base {
 
 	public interface MsgEvent {
 
-		void doXml(String authXml);
+		BufferedReader getReader() throws IOException;
 
 		void doView(Map<String, Object> message);
 
@@ -59,5 +61,6 @@ public class MP extends Base {
 
 		void doScan(String eventKey, Map<String, Object> message);
 
+		void doResponse(String xml);
 	}
 }

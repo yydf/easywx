@@ -1,7 +1,9 @@
 package cn.coder.easywx;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,13 +14,18 @@ import cn.coder.easywx.core.MP.MsgEvent;
 import cn.coder.easywx.core.MiniProgram;
 import cn.coder.easywx.core.Open;
 import cn.coder.easywx.core.Payment;
+import cn.coder.easywx.util.XMLUtils;
 
 public class WXApi {
 
 	private static final Logger logger = LoggerFactory.getLogger(WXApi.class);
+	// 公众号
 	private static MP mp;
+	// 开放平台
 	private static Open open;
+	// 小程序
 	private static MiniProgram miniProgram;
+	// 企业号
 	private static Corporation corp;
 
 	public static MP forMP(String appId, String appSecret) {
@@ -79,7 +86,7 @@ public class WXApi {
 			throw new NullPointerException("The payment can not be null");
 		return pay;
 	}
-	
+
 	public static Payment appPay() {
 		Payment pay = miniProgram.pay();
 		if (pay == null)
@@ -87,9 +94,39 @@ public class WXApi {
 		return pay;
 	}
 
-	public static void auth(HttpServletRequest request, HttpServletResponse response, MsgEvent event) {
-		// TODO Auto-generated method stub
-
+	public static void auth(MsgEvent msgEvent) {
+		try {
+			String authXml = XMLUtils.deserialize(msgEvent.getReader());
+			logger.debug("[XML]" + authXml);
+			HashMap<String, Object> map = XMLUtils.doXMLParse(authXml);
+			String toUserName = map.get("ToUserName") + "";
+			final String fromUserName = map.get("FromUserName") + "";
+			String msgType = map.get("MsgType") + "";
+			Map<String, Object> message = new HashMap<>();
+			message.put("FromUserName", toUserName);
+			message.put("ToUserName", fromUserName);
+			// 对文本消息进行处理
+			if ("text".equals(msgType)) {
+				msgEvent.doText(message);
+			} else if ("event".equals(msgType)) {
+				String event = map.get("Event") + "";
+				String eventKey = map.get("EventKey") + "";
+				if (event.equals("subscribe")) {
+					msgEvent.doSubscribe(eventKey, message);
+				} else if (event.equals("unsubscribe")) {
+					msgEvent.doUnSubscribe(message);
+				} else if (event.equals("SCAN")) {
+					msgEvent.doScan(eventKey, message);
+				} else if (event.equals("VIEW")) {
+					msgEvent.doView(message);
+				}
+			}
+			message.put("CreateTime", new Date().getTime());
+			msgEvent.doResponse(XMLUtils.toXML(message));
+		} catch (IOException e) {
+			logger.error("Wechat auth faild", e);
+			msgEvent.doResponse("error:" + e.getMessage());
+		}
 	}
 
 }

@@ -5,6 +5,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -77,7 +78,7 @@ public class XMLUtils {
 		}
 	}
 
-	public static String toXML(HashMap<String, Object> map) {
+	public static String toXML(Map<String, Object> map) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("<xml>");
 		Object val;

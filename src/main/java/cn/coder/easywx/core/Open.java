@@ -9,8 +9,8 @@ public class Open extends Base {
 
 	private static final Logger logger = LoggerFactory.getLogger(Open.class);
 	private static final String URL_OPENID = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=%s&secret=%s&code=%s&grant_type=authorization_code";
-	private String appId;
-	private String appSecret;
+	private final String appId;
+	private final String appSecret;
 
 	public Open(String appId, String appSecret) {
 		this.appId = appId;

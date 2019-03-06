@@ -55,6 +55,8 @@ public class Base {
 			URLConnection connection = new URL(url).openConnection();
 			if (ssl != null) {
 				((HttpsURLConnection) connection).setSSLSocketFactory(ssl);
+				if (logger.isDebugEnabled())
+					logger.debug("URL connection with ssl");
 			}
 			connection.setDoOutput(true);
 
