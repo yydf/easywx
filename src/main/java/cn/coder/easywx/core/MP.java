@@ -59,6 +59,13 @@ public class MP extends Base {
 		return _pay;
 	}
 
+	/**
+	 * 通过code获取用户openid
+	 * 
+	 * @param code
+	 *            随机码
+	 * @return openid
+	 */
 	public String getOpenId(String code) {
 		String json = getJSON(String.format(URL_OPENID, appId, appSecret, code));
 		logger.debug("[OPENID]" + json);
@@ -105,6 +112,12 @@ public class MP extends Base {
 		}
 	}
 
+	/**
+	 * 微信菜单事件回调
+	 * 
+	 * @author YYDF
+	 *
+	 */
 	public interface MsgEvent {
 
 		BufferedReader getReader() throws IOException;

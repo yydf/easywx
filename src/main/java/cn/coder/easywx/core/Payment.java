@@ -70,13 +70,16 @@ public class Payment extends Base {
 			if (SignUtils.getSign(result, this.apiKey).equals(sign)) {
 				PayResult msg = new PayResult(false);
 				msg.appid = getValue(result, "appid");
-				msg.mch_id = getValue(result, "mch_id");
 				msg.openid = getValue(result, "openid");
+				msg.mch_id = getValue(result, "mch_id");
+				msg.bank_type = getValue(result, "bank_type");
 				msg.trade_type = getValue(result, "trade_type");
 				// 商户订单号
 				msg.out_trade_no = getValue(result, "out_trade_no");
+				msg.transaction_id = getValue(result, "transaction_id");
 				msg.time_end = getValue(result, "time_end");
 				msg.cash_fee = getValue(result, "cash_fee");
+				msg.total_fee = getValue(result, "total_fee");
 				return msg;
 			}
 			logger.debug("Check sign faild");
