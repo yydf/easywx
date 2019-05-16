@@ -12,26 +12,35 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.coder.easywx.result.PayResult;
-import cn.coder.easywx.result.RefundOrder;
-import cn.coder.easywx.result.UnifiedOrder;
+import cn.coder.easywx.mapper.PayResult;
+import cn.coder.easywx.mapper.Redpack;
+import cn.coder.easywx.mapper.RefundOrder;
+import cn.coder.easywx.mapper.Transfer;
+import cn.coder.easywx.mapper.UnifiedOrder;
 import cn.coder.easywx.util.SignUtils;
 import cn.coder.easywx.util.XMLUtils;
 
-public class Payment extends Base {
+public final class Payment extends Base {
 	private static final Logger logger = LoggerFactory.getLogger(Payment.class);
 	private static final String URL_CREATE_UNIFIEDORDER = "https://api.mch.weixin.qq.com/pay/unifiedorder";
 	private static final String URL_REFUNDORDER = "https://api.mch.weixin.qq.com/secapi/pay/refund";
+	private static final String URL_SEND_REDPACK = "https://api.mch.weixin.qq.com/mmpaymkttransfers/sendredpack";
+	private static final String URL_TRANSFERS = "https://api.mch.weixin.qq.com/mmpaymkttransfers/promotion/transfers";
 	private final String apiKey;
 	private final String mchId;
 	private final String notifyUrl;
 	private final String appId;
+	private SSLSocketFactory ssl;
 
 	public Payment(String appId, String mchId, String apiKey, String callbackUrl) {
 		this.appId = appId;
 		this.mchId = mchId;
 		this.apiKey = apiKey;
 		this.notifyUrl = callbackUrl;
+	}
+
+	public void setSSLSocketFactory(SSLSocketFactory ssl) {
+		this.ssl = ssl;
 	}
 
 	public PayResult callback(BufferedReader reader) {
@@ -87,6 +96,12 @@ public class Payment extends Base {
 		return null;
 	}
 
+	/**
+	 * 创建预付单
+	 * 
+	 * @param order
+	 * @return 预付单所需参数
+	 */
 	public Map<String, Object> createUnifiedOrder(UnifiedOrder order) {
 		HashMap<String, Object> map = new HashMap<>();
 		map.put("appid", this.appId);// 应用ID
@@ -163,7 +178,9 @@ public class Payment extends Base {
 		return null;
 	}
 
-	public boolean refundCash(RefundOrder order, SSLSocketFactory ssl) {
+	public boolean refundCash(RefundOrder order) {
+		if (ssl == null)
+			throw new NullPointerException("The ssl can not be null");
 		try {
 			HashMap<String, Object> map = new HashMap<>();
 			map.put("appid", this.appId);
@@ -177,14 +194,70 @@ public class Payment extends Base {
 
 			map.put("sign", SignUtils.getSign(map, this.apiKey));
 
-			String return_xml = postString(URL_REFUNDORDER, ssl, XMLUtils.toXML(map));
-			logger.debug("[XML]" + return_xml);
-			Map<String, Object> result = XMLUtils.doXMLParse(return_xml);
-			String returnCode = getValue(result, "return_code");
-			String resultCode = getValue(result, "result_code");
-			return ("SUCCESS".equals(returnCode)) && ("SUCCESS".equals(resultCode));
+			return getWechatResult(URL_REFUNDORDER, this.ssl, map);
 		} catch (Exception e) {
 			logger.error("Refund cash faild", e);
+			return false;
+		}
+	}
+
+	/**
+	 * 发送微信红包
+	 * 
+	 * @param redpack
+	 *            发送红包参数
+	 * @return 调用微信接口是否成功
+	 */
+	public boolean sendRedpack(Redpack redpack) {
+		if (ssl == null)
+			throw new NullPointerException("The ssl can not be null");
+		try {
+			HashMap<String, Object> map = new HashMap<>();
+			map.put("wxappid", appId);// 应用ID
+			map.put("mch_id", mchId);// 商户号
+			map.put("nonce_str", getRandamStr());// 随机字符串
+			map.put("mch_billno", redpack.mch_billno);// 商户订单号
+			map.put("send_name", redpack.send_name);
+			map.put("re_openid", redpack.re_openid);
+			map.put("total_amount", redpack.total_amount);// 总金额(单位分)
+			map.put("total_num", 1);// 总金额(单位分)
+			map.put("wishing", redpack.wishing); // 红包祝福语
+			map.put("client_ip", redpack.client_ip); // 调用接口的机器Ip地址
+			map.put("act_name", redpack.act_name);
+
+			// 增加签名
+			map.put("sign", SignUtils.getSign(map, this.apiKey));// 签名
+
+			return getWechatResult(URL_SEND_REDPACK, this.ssl, map);
+		} catch (Exception e) {
+			logger.error("Send redpack faild:", e);
+			return false;
+		}
+	}
+
+	public boolean transferCash(Transfer tf) {
+		if (ssl == null)
+			throw new NullPointerException("The ssl can not be null");
+		try {
+			HashMap<String, Object> map = new HashMap<>();
+			map.put("mch_appid", appId);// 应用ID
+			map.put("mchid", mchId);// 商户号
+			map.put("nonce_str", getRandamStr());// 随机字符串
+			map.put("partner_trade_no", tf.partner_trade_no);// 商户订单号
+			map.put("openid", tf.openid);
+			map.put("check_name", tf.check_name);
+			if ("FORCE_CHECK".equals(tf.check_name))
+				map.put("re_user_name", tf.re_user_name);
+			map.put("amount", tf.amount);// 总金额(单位分)
+			map.put("desc", tf.desc);// 总金额(单位分)
+			map.put("spbill_create_ip", tf.spbill_create_ip); // 调用接口的机器Ip地址
+
+			// 增加签名
+			map.put("sign", SignUtils.getSign(map, this.apiKey));// 签名
+
+			return getWechatResult(URL_TRANSFERS, ssl, map);
+		} catch (Exception e) {
+			logger.error("Transfers faild", e);
 			return false;
 		}
 	}

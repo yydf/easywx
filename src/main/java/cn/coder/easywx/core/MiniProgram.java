@@ -3,10 +3,10 @@ package cn.coder.easywx.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.coder.easywx.result.WXSession;
+import cn.coder.easywx.mapper.WXSession;
 import cn.coder.easywx.util.JSONUtils;
 
-public class MiniProgram extends Base {
+public final class MiniProgram extends Base {
 
 	private static final Logger logger = LoggerFactory.getLogger(MiniProgram.class);
 	private static final String URL_CODE2SESSION = "https://api.weixin.qq.com/sns/jscode2session?appid=%s&secret=%s&js_code=%s&grant_type=authorization_code";
@@ -19,8 +19,9 @@ public class MiniProgram extends Base {
 		this.appSecret = appSecret;
 	}
 
-	public void forPayment(String mchId, String apiKey, String callbackUrl) {
+	public Payment forPayment(String mchId, String apiKey, String callbackUrl) {
 		this._pay = new Payment(this.appId, mchId, apiKey, callbackUrl);
+		return this._pay;
 	}
 
 	public Payment pay() {

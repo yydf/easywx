@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.coder.easywx.util.JSONUtils;
 
-public class Open extends Base {
+public final class Open extends Base {
 
 	private static final Logger logger = LoggerFactory.getLogger(Open.class);
 	private static final String URL_OPENID = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=%s&secret=%s&code=%s&grant_type=authorization_code";

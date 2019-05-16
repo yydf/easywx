@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -15,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.coder.easywx.util.JSONUtils;
+import cn.coder.easywx.util.XMLUtils;
 
 public class Base {
 	private static final Logger logger = LoggerFactory.getLogger(Base.class);
@@ -36,11 +38,20 @@ public class Base {
 	}
 
 	protected static boolean valid(String json, String key) {
-		if(json == null || "".equals(json))
+		if (json == null || "".equals(json))
 			return false;
-		return json.contains("\""+key+"\"");
+		return json.contains("\"" + key + "\"");
 	}
-	
+
+	protected static boolean getWechatResult(String url, SSLSocketFactory ssl, HashMap<String, Object> map) {
+		String return_xml = postString(url, ssl, XMLUtils.toXML(map));
+		logger.debug("[WECHAT]" + return_xml);
+		HashMap<String, Object> result = XMLUtils.doXMLParse(return_xml);
+		String returnCode = getValue(result, "return_code");
+		String resultCode = getValue(result, "result_code");
+		return "SUCCESS".equals(returnCode) && "SUCCESS".equals(resultCode);
+	}
+
 	protected static String getJSON(String url) {
 		StringBuilder sb = new StringBuilder();
 		try {

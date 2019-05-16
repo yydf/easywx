@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.coder.easywx.util.JSONUtils;
 
-public class Corporation extends Base {
+public final class Corporation extends Base {
 
 	private static final Logger logger = LoggerFactory.getLogger(Corporation.class);
 	private static final long TIME = 7100 * 1000;

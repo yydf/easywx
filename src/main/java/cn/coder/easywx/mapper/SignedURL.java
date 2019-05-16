@@ -1,4 +1,4 @@
-package cn.coder.easywx.result;
+package cn.coder.easywx.mapper;
 
 public class SignedURL {
 

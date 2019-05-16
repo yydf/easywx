@@ -7,7 +7,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.coder.easywx.result.SignedURL;
+import cn.coder.easywx.mapper.SignedURL;
 import cn.coder.easywx.util.JSONUtils;
 import cn.coder.easywx.util.SignUtils;
 
@@ -17,7 +17,7 @@ import cn.coder.easywx.util.SignUtils;
  * @author YYDF 2019-03-06
  *
  */
-public class MP extends Base {
+public final class MP extends Base {
 
 	private static final Logger logger = LoggerFactory.getLogger(MP.class);
 	private static final long TIME = 7100 * 1000;
@@ -49,8 +49,9 @@ public class MP extends Base {
 		return _token;
 	}
 
-	public void forPayment(String mchId, String apiKey, String callbackUrl) {
+	public Payment forPayment(String mchId, String apiKey, String callbackUrl) {
 		this._pay = new Payment(this.appId, mchId, apiKey, callbackUrl);
+		return this._pay;
 	}
 
 	public Payment pay() {
