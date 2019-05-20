@@ -46,9 +46,9 @@ public class Base {
 	protected static boolean getWechatResult(String url, SSLSocketFactory ssl, HashMap<String, Object> map) {
 		String return_xml = postString(url, ssl, XMLUtils.toXML(map));
 		logger.debug("[WECHAT]" + return_xml);
-		HashMap<String, Object> result = XMLUtils.doXMLParse(return_xml);
-		String returnCode = getValue(result, "return_code");
-		String resultCode = getValue(result, "result_code");
+		map = XMLUtils.doXMLParse(return_xml);
+		String returnCode = getValue(map, "return_code");
+		String resultCode = getValue(map, "result_code");
 		return "SUCCESS".equals(returnCode) && "SUCCESS".equals(resultCode);
 	}
 

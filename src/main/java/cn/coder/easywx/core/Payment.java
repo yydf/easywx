@@ -255,11 +255,16 @@ public final class Payment extends Base {
 			// 增加签名
 			map.put("sign", SignUtils.getSign(map, this.apiKey));// 签名
 
-			return getWechatResult(URL_TRANSFERS, ssl, map);
+			// 如果执行成功
+			if (getWechatResult(URL_TRANSFERS, ssl, map)) {
+				tf.payment_no = getValue(map, "payment_no");
+				tf.payment_time = getValue(map, "payment_time");
+				return true;
+			}
 		} catch (Exception e) {
 			logger.error("Transfers faild", e);
-			return false;
 		}
+		return false;
 	}
 
 }

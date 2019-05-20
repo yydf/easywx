@@ -9,5 +9,7 @@ public class Transfer {
 	public int amount;
 	public String desc;
 	public String spbill_create_ip;
+	public String payment_no;
+	public String payment_time;
 
 }
