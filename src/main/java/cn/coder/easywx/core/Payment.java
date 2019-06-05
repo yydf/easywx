@@ -1,14 +1,12 @@
 package cn.coder.easywx.core;
 
 import java.io.BufferedReader;
-import java.security.Security;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.net.ssl.SSLSocketFactory;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +49,6 @@ public final class Payment extends Base {
 		if (result.containsKey("req_info")) {
 			byte[] data = Base64.getDecoder().decode(result.get("req_info").toString());
 			byte[] key = SignUtils.encodeByMD5(this.apiKey).toLowerCase().getBytes();
-			Security.addProvider(new BouncyCastleProvider());
 			String str = SignUtils.decryptData(data, key);
 			logger.debug("[Wechat]" + str);
 			if (str != null) {

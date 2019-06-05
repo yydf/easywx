@@ -94,38 +94,41 @@ public class WXApi {
 		return pay;
 	}
 
-	public static void auth(MsgEvent msgEvent) {
+	public static void auth(String method, MsgEvent msgEvent) {
 		try {
-			String authXml = XMLUtils.deserialize(msgEvent.getReader());
-			logger.debug("[XML]" + authXml);
-			HashMap<String, Object> map = XMLUtils.doXMLParse(authXml);
-			String toUserName = map.get("ToUserName") + "";
-			final String fromUserName = map.get("FromUserName") + "";
-			String msgType = map.get("MsgType") + "";
-			Map<String, Object> message = new HashMap<>();
-			message.put("FromUserName", toUserName);
-			message.put("ToUserName", fromUserName);
-			// 对文本消息进行处理
-			if ("text".equals(msgType)) {
-				msgEvent.doText(message);
-			} else if ("event".equals(msgType)) {
-				String event = map.get("Event") + "";
-				String eventKey = map.get("EventKey") + "";
-				if (event.equals("subscribe")) {
-					msgEvent.doSubscribe(eventKey, message);
-				} else if (event.equals("unsubscribe")) {
-					msgEvent.doUnSubscribe(message);
-				} else if (event.equals("SCAN")) {
-					msgEvent.doScan(eventKey, message);
-				} else if (event.equals("VIEW")) {
-					msgEvent.doView(message);
+			if ("POST".equals(method)) {
+				String authXml = XMLUtils.deserialize(msgEvent.getReader());
+				logger.debug("[XML]" + authXml);
+				HashMap<String, Object> map = XMLUtils.doXMLParse(authXml);
+				String toUserName = map.get("ToUserName") + "";
+				final String fromUserName = map.get("FromUserName") + "";
+				String msgType = map.get("MsgType") + "";
+				Map<String, Object> message = new HashMap<>();
+				message.put("FromUserName", toUserName);
+				message.put("ToUserName", fromUserName);
+				// 对文本消息进行处理
+				if ("text".equals(msgType)) {
+					msgEvent.doText(message);
+				} else if ("event".equals(msgType)) {
+					String event = map.get("Event") + "";
+					String eventKey = map.get("EventKey") + "";
+					if (event.equals("subscribe")) {
+						msgEvent.doSubscribe(eventKey, message);
+					} else if (event.equals("unsubscribe")) {
+						msgEvent.doUnSubscribe(message);
+					} else if (event.equals("SCAN")) {
+						msgEvent.doScan(eventKey, message);
+					} else if (event.equals("VIEW")) {
+						msgEvent.doView(message);
+					}
 				}
+				message.put("CreateTime", new Date().getTime());
+				msgEvent.doResponse(XMLUtils.toXML(message));
+			} else {
+				msgEvent.doResponse("echostr");
 			}
-			message.put("CreateTime", new Date().getTime());
-			msgEvent.doResponse(XMLUtils.toXML(message));
 		} catch (IOException e) {
 			logger.error("Wechat auth faild", e);
-			msgEvent.doResponse("error:" + e.getMessage());
 		}
 	}
 

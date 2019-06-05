@@ -24,6 +24,7 @@ public final class MP extends Base {
 	private static final String URL_TOKEN = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=%s&secret=%s";
 	private static final String URL_JSTICKET = "https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=%s&type=jsapi";
 	private static final String URL_OPENID = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=%s&secret=%s&code=%s&grant_type=authorization_code";
+	private static final String URL_SEND_TEMPLATE = "https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=%s";
 	private final String appId;
 	private final String appSecret;
 	private Payment _pay;
@@ -114,6 +115,22 @@ public final class MP extends Base {
 	}
 
 	/**
+	 * 发送模板消息
+	 * 
+	 * @param templateJson
+	 *            模板内容
+	 * @return 发送成功的msgid
+	 */
+	public String sendTemplate(String templateJson) {
+		String postUrl = String.format(URL_SEND_TEMPLATE, getAccessToken());
+		String json = postString(postUrl, templateJson);
+		logger.debug("[SEND_TEMPLATE]" + json);
+		if (valid(json, "msgid"))
+			return JSONUtils.getString(json, "msgid");
+		return null;
+	}
+
+	/**
 	 * 微信菜单事件回调
 	 * 
 	 * @author YYDF
@@ -133,6 +150,6 @@ public final class MP extends Base {
 
 		void doScan(String eventKey, Map<String, Object> message);
 
-		void doResponse(String xml);
+		void doResponse(String xml) throws IOException;
 	}
 }

@@ -7,7 +7,6 @@
 环境
 -------------
 - JDK 7
-- Servlet 3.1
 
 如何使用
 -----------------------
@@ -18,7 +17,15 @@
 <dependency>
     <groupId>cn.4coder</groupId>
     <artifactId>easywx</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
+</dependency>
+```
+* 如果用到微信的退款功能，需添加bcprov进行解密
+```
+<dependency>
+    <groupId>org.bouncycastle</groupId>
+    <artifactId>bcprov-jdk16</artifactId>
+    <version>1.46</version>
 </dependency>
 ```
 
@@ -33,4 +40,21 @@ System.out.println(WXApi.mp().getAccessToken());
 WXApi.mp().forPayment(mchId, apiKey, callbackUrl);
 //生成预付单
 System.out.println(WXApi.mpPay().createUnifiedOrder(UnifiedOrder.test()));
+
+//获取支付的通知
+@Request(value = "/callback", method = HttpMethod.POST)
+public String callback() {
+	try {
+		//如果有退款通知，则添加
+		Security.addProvider(new BouncyCastleProvider());
+		PayResult result = WXApi.appPay().callback(request.getReader());
+		if (result != null) {
+			service.updateStatus(result);
+			return PayResult.SUCCESS;
+		}
+	} catch (IOException e) {
+		logger.error("Callback faild", e);
+	}
+	return PayResult.FAIL;
+}
 ```

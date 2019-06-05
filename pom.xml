@@ -4,11 +4,11 @@
 
 	<groupId>cn.4coder</groupId>
 	<artifactId>easywx</artifactId>
-	<version>0.0.2-SNAPSHOT</version>
+	<version>0.0.2</version>
 	<packaging>jar</packaging>
 
 	<name>easywx</name>
-	<url>http://maven.apache.org</url>
+	<url>https://github.com/yydf</url>
 	<description>A simple, light Wechat API framework.</description>
 
 	<properties>
@@ -43,6 +43,7 @@
 		<connection>git@github.com:yydf/easywx.git</connection>
 		<developerConnection>scm:git@github.com:yydf/easywx.git</developerConnection>
 		<url>https://github.com/yydf/easywx</url>
+		<tag>simple,light,wechat,easy-to-use</tag>
 	</scm>
 
 	<parent>
@@ -62,11 +63,6 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 			<version>1.7.25</version>
-		</dependency>
-		<dependency>
-			<groupId>org.bouncycastle</groupId>
-			<artifactId>bcprov-jdk16</artifactId>
-			<version>1.46</version>
 		</dependency>
 	</dependencies>
 
