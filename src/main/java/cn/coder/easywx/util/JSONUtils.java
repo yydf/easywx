@@ -17,6 +17,19 @@ public class JSONUtils {
 		return json.substring(start + 1, end);
 	}
 
+	public static Long getLong(String json, String key) {
+		if (json == null || key == null)
+			return null;
+		int startIndex = json.indexOf(key);
+		if (startIndex == -1)
+			return null;
+		int start = startIndex + key.length() + 1;
+		int end = json.indexOf(",", start);
+		if (end == -1)
+			end = json.indexOf("}", start);
+		return Long.parseLong(json.substring(start + 1, end));
+	}
+
 	public static void readStream(StringBuilder sb, InputStream inputStream) throws IOException {
 		final char[] temp = new char[1024];
 		InputStreamReader reader = new InputStreamReader(inputStream, "utf-8");
@@ -27,6 +40,12 @@ public class JSONUtils {
 		reader.close();
 		// 释放资源
 		inputStream.close();
+	}
+
+	public static String readStream(InputStream inputStream) throws IOException {
+		StringBuilder sb = new StringBuilder();
+		readStream(sb, inputStream);
+		return sb.toString();
 	}
 
 }
