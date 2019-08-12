@@ -62,7 +62,8 @@ public final class MP extends Base {
 				logger.debug("[ACCESS_TOKEN]" + json);
 				_token = JSONUtils.getString(json, "access_token");
 				_tokenTime = System.currentTimeMillis();
-			}
+			} else
+				throw new NullPointerException("Not found the access_token");
 		}
 		return _token;
 	}
@@ -138,16 +139,16 @@ public final class MP extends Base {
 	 *            模板内容
 	 * @return 发送成功的msgid
 	 */
-	public String sendTemplate(String templateJson) {
+	public Long sendTemplate(String templateJson) {
 		String postUrl = String.format(URL_SEND_TEMPLATE, getAccessToken());
 		String json = postString(postUrl, templateJson);
 		logger.debug("[SEND_TEMPLATE]" + json);
 		if (valid(json, "msgid"))
-			return JSONUtils.getString(json, "msgid");
-		// 判断是不是token无效
-		if (40001 == JSONUtils.getLong(json, "errcode")) {
+			return JSONUtils.getLong(json, "msgid");
+		// 判断是不是token无效，发送模板消息会误报token无效
+		if (invalidToken(json)) {
 			_token = null;// 清空缓存token
-			return sendTemplate(templateJson);
+			return sendTemplate(templateJson); // 重新发送
 		}
 		return null;
 	}

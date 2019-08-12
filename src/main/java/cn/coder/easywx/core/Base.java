@@ -43,6 +43,15 @@ public class Base {
 		return json.contains("\"" + key + "\"");
 	}
 
+	protected static boolean invalidToken(String json) {
+		if (json == null || "".equals(json))
+			return false;
+		Long errcode = JSONUtils.getLong(json, "errcode");
+		if (errcode != null)
+			return errcode.equals(40001) || errcode.equals(40014) || errcode.equals(42001);
+		return false;
+	}
+
 	protected static boolean getWechatResult(String url, SSLSocketFactory ssl, HashMap<String, Object> map) {
 		String return_xml = postString(url, ssl, XMLUtils.toXML(map));
 		logger.debug("[WECHAT]" + return_xml);
