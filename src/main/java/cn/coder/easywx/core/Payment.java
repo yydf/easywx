@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.coder.easywx.mapper.PayResult;
 import cn.coder.easywx.mapper.Redpack;
+import cn.coder.easywx.mapper.RedpackStatus;
 import cn.coder.easywx.mapper.RefundOrder;
 import cn.coder.easywx.mapper.Transfer;
 import cn.coder.easywx.mapper.UnifiedOrder;
@@ -23,6 +24,7 @@ public final class Payment extends Base {
 	private static final String URL_CREATE_UNIFIEDORDER = "https://api.mch.weixin.qq.com/pay/unifiedorder";
 	private static final String URL_REFUNDORDER = "https://api.mch.weixin.qq.com/secapi/pay/refund";
 	private static final String URL_SEND_REDPACK = "https://api.mch.weixin.qq.com/mmpaymkttransfers/sendredpack";
+	private static final String URL_REDPACK_STATUS = "https://api.mch.weixin.qq.com/mmpaymkttransfers/gethbinfo";
 	private static final String URL_TRANSFERS = "https://api.mch.weixin.qq.com/mmpaymkttransfers/promotion/transfers";
 	private final String apiKey;
 	private final String mchId;
@@ -42,53 +44,57 @@ public final class Payment extends Base {
 	}
 
 	public PayResult callback(BufferedReader reader) {
-		String xml = XMLUtils.deserialize(reader);
-		logger.debug("[Wechat]:" + xml);
-		HashMap<String, Object> result = XMLUtils.doXMLParse(xml);
-		// 退款通知
-		if (result.containsKey("req_info")) {
-			byte[] data = Base64.getDecoder().decode(result.get("req_info").toString());
-			byte[] key = SignUtils.encodeByMD5(this.apiKey).toLowerCase().getBytes();
-			String str = SignUtils.decryptData(data, key);
-			logger.debug("[Wechat]" + str);
-			if (str != null) {
-				Map<String, Object> result2 = XMLUtils.doXMLParse(str);
-				// 如果退款成功
-				if ("SUCCESS".equals(getValue(result2, "refund_status"))) {
-					PayResult msg = new PayResult(true);
-					msg.mch_id = getValue(result, "mch_id");
+		try {
+			String xml = XMLUtils.deserialize(reader);
+			logger.debug("[Wechat]:" + xml);
+			HashMap<String, Object> result = XMLUtils.doXMLParse(xml);
+			// 退款通知
+			if (result.containsKey("req_info")) {
+				byte[] data = Base64.getDecoder().decode(result.get("req_info").toString());
+				byte[] key = SignUtils.encodeByMD5(this.apiKey).toLowerCase().getBytes();
+				String str = SignUtils.decryptData(data, key);
+				logger.debug("[Wechat]" + str);
+				if (str != null) {
+					Map<String, Object> result2 = XMLUtils.doXMLParse(str);
+					// 如果退款成功
+					if ("SUCCESS".equals(getValue(result2, "refund_status"))) {
+						PayResult msg = new PayResult(true);
+						msg.mch_id = getValue(result, "mch_id");
+						msg.appid = getValue(result, "appid");
+						// 商户订单号
+						msg.out_trade_no = getValue(result2, "out_trade_no");
+						msg.out_refund_no = getValue(result2, "out_refund_no");
+						msg.success_time = getValue(result2, "success_time");
+						msg.refund_fee = getValue(result2, "refund_fee");
+						return msg;
+					}
+				}
+				return null;
+			}
+			String returnCode = getValue(result, "return_code");
+			String resultCode = getValue(result, "result_code");
+			if ("SUCCESS".equals(returnCode) && "SUCCESS".equals(resultCode)) {
+				// 签名验证
+				String sign = result.remove("sign").toString();
+				if (SignUtils.getSign(result, this.apiKey).equals(sign)) {
+					PayResult msg = new PayResult(false);
 					msg.appid = getValue(result, "appid");
+					msg.openid = getValue(result, "openid");
+					msg.mch_id = getValue(result, "mch_id");
+					msg.bank_type = getValue(result, "bank_type");
+					msg.trade_type = getValue(result, "trade_type");
 					// 商户订单号
-					msg.out_trade_no = getValue(result2, "out_trade_no");
-					msg.out_refund_no = getValue(result2, "out_refund_no");
-					msg.success_time = getValue(result2, "success_time");
-					msg.refund_fee = getValue(result2, "refund_fee");
+					msg.out_trade_no = getValue(result, "out_trade_no");
+					msg.transaction_id = getValue(result, "transaction_id");
+					msg.time_end = getValue(result, "time_end");
+					msg.cash_fee = getValue(result, "cash_fee");
+					msg.total_fee = getValue(result, "total_fee");
 					return msg;
 				}
+				logger.debug("Check sign faild");
 			}
-			return null;
-		}
-		String returnCode = getValue(result, "return_code");
-		String resultCode = getValue(result, "result_code");
-		if ("SUCCESS".equals(returnCode) && "SUCCESS".equals(resultCode)) {
-			// 签名验证
-			String sign = result.remove("sign").toString();
-			if (SignUtils.getSign(result, this.apiKey).equals(sign)) {
-				PayResult msg = new PayResult(false);
-				msg.appid = getValue(result, "appid");
-				msg.openid = getValue(result, "openid");
-				msg.mch_id = getValue(result, "mch_id");
-				msg.bank_type = getValue(result, "bank_type");
-				msg.trade_type = getValue(result, "trade_type");
-				// 商户订单号
-				msg.out_trade_no = getValue(result, "out_trade_no");
-				msg.transaction_id = getValue(result, "transaction_id");
-				msg.time_end = getValue(result, "time_end");
-				msg.cash_fee = getValue(result, "cash_fee");
-				msg.total_fee = getValue(result, "total_fee");
-				return msg;
-			}
-			logger.debug("Check sign faild");
+		} catch (Exception e) {
+			logger.error("Receive wechat callback faild", e);
 		}
 		return null;
 	}
@@ -175,6 +181,13 @@ public final class Payment extends Base {
 		return null;
 	}
 
+	/**
+	 * 退款申请
+	 * 
+	 * @param order
+	 *            退款条件
+	 * @return 申请是否成功
+	 */
 	public boolean refundCash(RefundOrder order) {
 		if (ssl == null)
 			throw new NullPointerException("The ssl can not be null");
@@ -225,13 +238,63 @@ public final class Payment extends Base {
 			// 增加签名
 			map.put("sign", SignUtils.getSign(map, this.apiKey));// 签名
 
-			return getWechatResult(URL_SEND_REDPACK, this.ssl, map);
+			if (getWechatResult(URL_SEND_REDPACK, this.ssl, map)) {
+				redpack.send_listid = getValue(map, "send_listid");
+				return true;
+			}
 		} catch (Exception e) {
 			logger.error("Send redpack faild:", e);
-			return false;
 		}
+		return false;
 	}
 
+	/**
+	 * 获取红包的发放状态
+	 * 
+	 * @param billNo
+	 *            订单号
+	 * @return
+	 */
+	public RedpackStatus redpackStatus(String billNo) {
+		try {
+			HashMap<String, Object> map = new HashMap<>();
+			map.put("appid", appId);// 应用ID
+			map.put("mch_id", mchId);// 商户号
+			map.put("nonce_str", getRandamStr());// 随机字符串
+			map.put("mch_billno", billNo);// 商户订单号
+			map.put("bill_type", "MCHT"); // 订单类型
+
+			// 增加签名
+			map.put("sign", SignUtils.getSign(map, this.apiKey));// 签名
+
+			// post调取方法
+			if (getWechatResult(URL_REDPACK_STATUS, this.ssl, map)) {
+				RedpackStatus status = new RedpackStatus();
+				status.status = getValue(map, "status");
+				status.total_num = getValue(map, "total_num");
+				status.total_amount = getValue(map, "total_amount");
+				status.reason = getValue(map, "reason");
+				status.send_time = getValue(map, "send_time");
+				status.refund_time = getValue(map, "refund_time");
+				status.refund_amount = getValue(map, "refund_amount");
+				status.openid = getValue(map, "openid");
+				status.amount = getValue(map, "amount");
+				status.rcv_time = getValue(map, "rcv_time");
+				return status;
+			}
+		} catch (Exception e) {
+			logger.error("获取红包状态失败", e);
+		}
+		return null;
+	}
+
+	/**
+	 * 企业付款到零钱
+	 * 
+	 * @param tf
+	 *            接口所需参数对象
+	 * @return 是否成功
+	 */
 	public boolean transferCash(Transfer tf) {
 		if (ssl == null)
 			throw new NullPointerException("The ssl can not be null");

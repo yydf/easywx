@@ -9,5 +9,7 @@ public class Redpack {
 	public String wishing;
 	public String client_ip;
 	public String act_name;
+	
+	public String send_listid;
 
 }
