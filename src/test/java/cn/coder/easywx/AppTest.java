@@ -2,6 +2,8 @@ package cn.coder.easywx;
 
 import java.util.HashMap;
 
+import cn.coder.easywx.util.JSONUtils;
+
 /**
  * Unit test for simple App.
  */
@@ -12,5 +14,9 @@ public class AppTest
 		map.put("ss", 123);
 		System.out.println(map.remove("ss"));
 		System.out.println(map.size());
+		
+		Long s = JSONUtils.getLong("{\"errcode\":12345}", "errcode");
+		System.out.println(s.equals(12345L));
+		System.out.println(Long.MAX_VALUE);
 	}
 }

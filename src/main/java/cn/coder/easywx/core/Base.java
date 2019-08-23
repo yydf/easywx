@@ -48,7 +48,7 @@ public class Base {
 			return false;
 		Long errcode = JSONUtils.getLong(json, "errcode");
 		if (errcode != null)
-			return errcode.equals(40001) || errcode.equals(40014) || errcode.equals(42001);
+			return errcode.equals(40001L) || errcode.equals(40014L) || errcode.equals(42001L);
 		return false;
 	}
 
