@@ -1,11 +1,14 @@
 package cn.coder.easywx.core;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -61,6 +64,17 @@ public class Base {
 		return "SUCCESS".equals(returnCode) && "SUCCESS".equals(resultCode);
 	}
 
+	protected static String toJson(List<?> list) {
+		StringBuilder sb = new StringBuilder();
+		for (Object obj : list) {
+			sb.append(obj.toString());
+			sb.append(",");
+		}
+		if (sb.length() > 0)
+			sb.delete(sb.length() - 1, sb.length());
+		return sb.toString();
+	}
+
 	protected static String getJSON(String url) {
 		StringBuilder sb = new StringBuilder();
 		try {
@@ -98,4 +112,55 @@ public class Base {
 		}
 		return sb.toString();
 	}
+
+	public static String postFile(String urlStr, InputStream inputFile) {
+		String res = "";
+		HttpURLConnection conn = null;
+		logger.debug("url:" + urlStr);
+		// boundary就是request头和上传文件内容的分隔符
+		String BOUNDARY = "---------------------------" + System.currentTimeMillis();
+		try {
+			conn = (HttpURLConnection) new URL(urlStr).openConnection();
+			conn.setDoOutput(true);
+			conn.setDoInput(true);
+			conn.setUseCaches(false);
+			conn.setRequestMethod("POST");
+			conn.setRequestProperty("Connection", "Keep-Alive");
+			conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + BOUNDARY);
+
+			// file
+			if (inputFile != null) {
+				OutputStream out = conn.getOutputStream();
+				// 没有传入文件类型，同时根据文件获取不到类型，默认采用application/octet-stream
+				StringBuffer strBuf = new StringBuffer();
+				strBuf.append("\r\n").append("--").append(BOUNDARY).append("\r\n");
+				strBuf.append("Content-Disposition: form-data; name=\"media\"; filename=\"test.jpg\"\r\n");
+				strBuf.append("Content-Type:image/jpg\r\n\r\n");
+				out.write(strBuf.toString().getBytes());
+
+				int bytes = 0;
+				byte[] bufferOut = new byte[102400];
+				while ((bytes = inputFile.read(bufferOut)) != -1) {
+					out.write(bufferOut, 0, bytes);
+				}
+				inputFile.close();
+
+				byte[] endData = ("\r\n--" + BOUNDARY + "--\r\n").getBytes();
+				out.write(endData);
+				out.flush();
+				out.close();
+			}
+			res = JSONUtils.readStream(conn.getInputStream());
+		} catch (Exception e) {
+			if (logger.isDebugEnabled())
+				logger.error("发送POST请求出错。" + urlStr);
+		} finally {
+			if (conn != null) {
+				conn.disconnect();
+				conn = null;
+			}
+		}
+		return res;
+	}
+
 }

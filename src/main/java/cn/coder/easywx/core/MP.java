@@ -2,12 +2,16 @@ package cn.coder.easywx.core;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.coder.easywx.mapper.Article;
+import cn.coder.easywx.mapper.News;
 import cn.coder.easywx.mapper.SignedURL;
 import cn.coder.easywx.util.JSONUtils;
 import cn.coder.easywx.util.SignUtils;
@@ -42,6 +46,11 @@ public final class MP extends Base {
 	private static final String URL_CUSTOM_SEND = "https://api.weixin.qq.com/cgi-bin/message/custom/send?access_token=%s";
 	private static final String URL_BIND_TAG = "https://api.weixin.qq.com/cgi-bin/tags/members/batchtagging?access_token=%s";
 	private static final String URL_UNBIND_TAG = "https://api.weixin.qq.com/cgi-bin/tags/members/batchuntagging?access_token=%s";
+	private static final String URL_UPLOADIMG = "https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=%s";
+	private static final String URL_MEDIA_ADDNEWS = "https://api.weixin.qq.com/cgi-bin/material/add_news?access_token=%s";
+	private static final String URL_PREVIEW_NEWS = "https://api.weixin.qq.com/cgi-bin/message/mass/preview?access_token=%s";
+	private static final String URL_ADD_MATERIAL = "https://api.weixin.qq.com/cgi-bin/material/add_material?access_token=%s&type=%s";
+	private static final String URL_SENDALL_NEWS = "https://api.weixin.qq.com/cgi-bin/message/mass/sendall?access_token=%s";
 
 	private static final String POST_SENCE = "{\"expire_seconds\": %s, \"action_name\": \"QR_SCENE\", \"action_info\": {\"scene\": {\"scene_id\": %s}}}";
 	private static final String POST_LIMIT_SENCE = "{\"action_name\": \"QR_LIMIT_SCENE\", \"action_info\": {\"scene\": {\"scene_id\": %s}}}";
@@ -49,6 +58,10 @@ public final class MP extends Base {
 	private static final String POST_LIMIT_STR_SENCE = "{\"action_name\": \"QR_LIMIT_STR_SCENE\", \"action_info\": {\"scene\": {\"scene_str\": \"%s\"}}}";
 	private static final String POST_SEND_TEXT = "{\"touser\":\"%s\",\"msgtype\":\"text\",\"text\":{\"content\":\"%s\"}}";
 	private static final String POST_SEND_ARTICLE = "{\"touser\":\"%s\",\"msgtype\":\"news\",\"news\":{\"articles\":[%s]}}";
+	private static final String POST_NEWS = "{\"articles\":[%s]}";
+	private static final String POST_PREVIEW_NEWS = "{\"towxname\":\"%s\",\"mpnews\":{\"media_id\":\"%s\"},\"msgtype\":\"mpnews\"}";
+	private static final String POST_SENDALL_NEWS_TAG = "{\"filter\":{\"is_to_all\":false,\"tag_id\":%s},\"mpnews\":{\"media_id\":\"%s\"},\"msgtype\":\"mpnews\",\"send_ignore_reprint\":1}";
+	private static final String POST_SENDALL_NEWS = "{\"filter\":{\"is_to_all\":true},\"mpnews\":{\"media_id\":\"%s\"},\"msgtype\":\"mpnews\",\"send_ignore_reprint\":1}";
 
 	public MP(String appId, String appSecret) {
 		this.appId = appId;
@@ -221,6 +234,109 @@ public final class MP extends Base {
 		String postStr = String.format(POST_SEND_ARTICLE, openId, article);
 		String json = postString(String.format(URL_CUSTOM_SEND, getAccessToken()), postStr);
 		logger.debug("[SEND_ARTICLE]{}", json);
+	}
+
+	public String uploadImg(String url) {
+		try {
+			String json = postFile(String.format(URL_UPLOADIMG, getAccessToken()), new URL(url).openStream());
+			logger.debug("[UPLOAD_IMG]{}", json);
+			if (valid(json, "url"))
+				return JSONUtils.getString(json, "url");
+		} catch (IOException e) {
+			logger.error("Upload img faild", e);
+		}
+		return null;
+	}
+
+	/**
+	 * 新增一个永久素材
+	 * 
+	 * @param type
+	 *            image图片，voice语音，video视频，thumb缩略图
+	 * @param inputFile
+	 *            文件流
+	 * @return 上传成功的media_id，失败返回null
+	 */
+	public String addMaterial(String type, InputStream inputFile) {
+		String json = postFile(String.format(URL_ADD_MATERIAL, getAccessToken(), type), inputFile);
+		logger.debug("[ADD_MATERIAL]{}", json);
+		if (valid(json, "media_id"))
+			return JSONUtils.getString(json, "media_id");
+		return null;
+	}
+
+	/**
+	 * 上传一个永久的图文素材
+	 * 
+	 * @param news
+	 *            图文的内容
+	 * @return 上传成功后的media_id，失败返回null
+	 */
+	public String addNews(List<News> news) {
+		for (News item : news) {
+			if (item.thumb_media_id.startsWith("http://") || item.thumb_media_id.startsWith("https://")) {
+				try {
+					item.thumb_media_id = addMaterial("image", new URL(item.thumb_media_id).openStream());
+				} catch (IOException e) {
+					throw new RuntimeException("add material faild", e);
+				}
+				if (item.thumb_media_id == null)
+					throw new RuntimeException("Convert thumb_media_id from url faild");
+			}
+		}
+		String postStr = String.format(POST_NEWS, toJson(news));
+		String json = postString(String.format(URL_MEDIA_ADDNEWS, getAccessToken()), postStr);
+		logger.debug("[ADD_NEWS]{}", json);
+		if (valid(json, "media_id"))
+			return JSONUtils.getString(json, "media_id");
+		return null;
+	}
+
+	/**
+	 * 预览图文消息
+	 * 
+	 * @param mediaId
+	 *            图文消息的media_id
+	 * @param wxName
+	 *            要预览用户的微信名
+	 * @return 是否成功调用
+	 */
+	public boolean previewNews(String mediaId, String wxName) {
+		String postStr = String.format(POST_PREVIEW_NEWS, wxName, mediaId);
+		String json = postString(String.format(URL_PREVIEW_NEWS, getAccessToken()), postStr);
+		logger.debug("[PREVIEW_NEWS]{}", json);
+		return json != null && JSONUtils.getLong(json, "errcode") == 0L;
+	}
+
+	/**
+	 * 群发图文消息
+	 * 
+	 * @param mediaId
+	 *            图文消息的media_id
+	 * @return 是否发送成功
+	 */
+	public boolean sendAllNews(String mediaId) {
+		return sendAllNews(mediaId, null);
+	}
+
+	/**
+	 * 通过用户标签群发图文消息
+	 * 
+	 * @param mediaId
+	 *            图文消息的media_id
+	 * @param tag
+	 *            要发送的用户标签
+	 * @return 是否发送成功
+	 */
+	public boolean sendAllNews(String mediaId, String tag) {
+		String postStr;
+		if (tag == null || tag.length() == 0)
+			postStr = String.format(POST_SENDALL_NEWS, mediaId);
+		else
+			postStr = String.format(POST_SENDALL_NEWS_TAG, tag, mediaId);
+		String json = postString(String.format(URL_SENDALL_NEWS, getAccessToken()), postStr);
+		logger.debug("[SEND_ALL]{}", json);
+		return json != null && JSONUtils.getLong(json, "errcode") == 0L;
 	}
 
 	/**
