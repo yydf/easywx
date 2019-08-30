@@ -48,6 +48,7 @@ public final class MP extends Base {
 	private static final String URL_UNBIND_TAG = "https://api.weixin.qq.com/cgi-bin/tags/members/batchuntagging?access_token=%s";
 	private static final String URL_UPLOADIMG = "https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=%s";
 	private static final String URL_MEDIA_ADDNEWS = "https://api.weixin.qq.com/cgi-bin/material/add_news?access_token=%s";
+	private static final String URL_MEDIA_UPDATENEWS = "https://api.weixin.qq.com/cgi-bin/material/update_news?access_token=%s";
 	private static final String URL_PREVIEW_NEWS = "https://api.weixin.qq.com/cgi-bin/message/mass/preview?access_token=%s";
 	private static final String URL_ADD_MATERIAL = "https://api.weixin.qq.com/cgi-bin/material/add_material?access_token=%s&type=%s";
 	private static final String URL_SENDALL_NEWS = "https://api.weixin.qq.com/cgi-bin/message/mass/sendall?access_token=%s";
@@ -59,6 +60,7 @@ public final class MP extends Base {
 	private static final String POST_SEND_TEXT = "{\"touser\":\"%s\",\"msgtype\":\"text\",\"text\":{\"content\":\"%s\"}}";
 	private static final String POST_SEND_ARTICLE = "{\"touser\":\"%s\",\"msgtype\":\"news\",\"news\":{\"articles\":[%s]}}";
 	private static final String POST_NEWS = "{\"articles\":[%s]}";
+	private static final String POST_UPDATE_NEWS = "{\"media_id\":\"%s\",\"index\":%s,\"articles\":%s}";
 	private static final String POST_PREVIEW_NEWS = "{\"towxname\":\"%s\",\"mpnews\":{\"media_id\":\"%s\"},\"msgtype\":\"mpnews\"}";
 	private static final String POST_SENDALL_NEWS_TAG = "{\"filter\":{\"is_to_all\":false,\"tag_id\":%s},\"mpnews\":{\"media_id\":\"%s\"},\"msgtype\":\"mpnews\",\"send_ignore_reprint\":1}";
 	private static final String POST_SENDALL_NEWS = "{\"filter\":{\"is_to_all\":true},\"mpnews\":{\"media_id\":\"%s\"},\"msgtype\":\"mpnews\",\"send_ignore_reprint\":1}";
@@ -290,6 +292,22 @@ public final class MP extends Base {
 		if (valid(json, "media_id"))
 			return JSONUtils.getString(json, "media_id");
 		return null;
+	}
+
+	public boolean updateNews(String mediaId,int index, News item) {
+		if (item.thumb_media_id.startsWith("http://") || item.thumb_media_id.startsWith("https://")) {
+			try {
+				item.thumb_media_id = addMaterial("image", new URL(item.thumb_media_id).openStream());
+			} catch (IOException e) {
+				throw new RuntimeException("add material faild", e);
+			}
+			if (item.thumb_media_id == null)
+				throw new RuntimeException("Convert thumb_media_id from url faild");
+		}
+		String postStr = String.format(POST_UPDATE_NEWS, mediaId, index, item.toString());
+		String json = postString(String.format(URL_MEDIA_UPDATENEWS, getAccessToken()), postStr);
+		logger.debug("[UPDATE_NEWS]{}", json);
+		return json != null && JSONUtils.getLong(json, "errcode") == 0L;
 	}
 
 	/**
