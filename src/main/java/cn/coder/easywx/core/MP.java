@@ -38,6 +38,7 @@ public final class MP extends Base {
 	private static final String URL_TOKEN = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=%s&secret=%s";
 	private static final String URL_JSTICKET = "https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=%s&type=jsapi";
 	private static final String URL_OPENID = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=%s&secret=%s&code=%s&grant_type=authorization_code";
+	private static final String URL_USER_INFO = "https://api.weixin.qq.com/cgi-bin/user/info?access_token=%s&openid=%s&lang=zh_CN";
 	private static final String URL_CREATE_MENU = "https://api.weixin.qq.com/cgi-bin/menu/create?access_token=%s";
 	private static final String URL_CREATE_QRCODE = "https://api.weixin.qq.com/cgi-bin/qrcode/create?access_token=%s";
 	private static final String URL_CREATE_TAG = "https://api.weixin.qq.com/cgi-bin/tags/create?access_token=%s";
@@ -106,6 +107,14 @@ public final class MP extends Base {
 		logger.debug("[OPENID]" + json);
 		if (valid(json, "openid"))
 			return JSONUtils.getString(json, "openid");
+		return null;
+	}
+
+	public String getUserInfo(String openId) {
+		String json = getJSON(String.format(URL_USER_INFO, getAccessToken(), openId));
+		logger.debug("[USER_INFO]" + json);
+		if (valid(json, "subscribe"))
+			return json;
 		return null;
 	}
 
@@ -294,7 +303,7 @@ public final class MP extends Base {
 		return null;
 	}
 
-	public boolean updateNews(String mediaId,int index, News item) {
+	public boolean updateNews(String mediaId, int index, News item) {
 		if (item.thumb_media_id.startsWith("http://") || item.thumb_media_id.startsWith("https://")) {
 			try {
 				item.thumb_media_id = addMaterial("image", new URL(item.thumb_media_id).openStream());
