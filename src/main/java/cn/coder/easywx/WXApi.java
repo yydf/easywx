@@ -122,8 +122,11 @@ public class WXApi {
 						msgEvent.doView(message);
 					}
 				}
-				message.put("CreateTime", new Date().getTime());
-				msgEvent.doResponse(XMLUtils.toXML(message));
+				if (message.size() > 0) {
+					message.put("CreateTime", new Date().getTime());
+					msgEvent.doResponse(XMLUtils.toXML(message));
+				} else
+					msgEvent.doResponse("");
 			} else {
 				msgEvent.doResponse("echostr");
 			}
