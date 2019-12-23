@@ -376,15 +376,17 @@ public final class MP extends Base {
 
 		BufferedReader getReader() throws IOException;
 
-		void doView(Map<String, Object> message);
+		void doSubscribe(String eventKey, Map<String, Object> message);
 
-		void doUnSubscribe(Map<String, Object> message);
+		void doView(Map<String, Object> message);
 
 		void doText(Map<String, Object> message);
 
-		void doSubscribe(String eventKey, Map<String, Object> message);
+		void doClick(String eventKey, Map<String, Object> message);
 
 		void doScan(String eventKey, Map<String, Object> message);
+
+		void doUnSubscribe(Map<String, Object> message);
 
 		void doResponse(String xml) throws IOException;
 	}

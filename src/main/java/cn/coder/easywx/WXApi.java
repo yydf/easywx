@@ -116,6 +116,8 @@ public class WXApi {
 						msgEvent.doSubscribe(eventKey, message);
 					} else if (event.equals("unsubscribe")) {
 						msgEvent.doUnSubscribe(message);
+					} else if (event.equals("CLICK")) {
+						msgEvent.doClick(eventKey, message);
 					} else if (event.equals("SCAN")) {
 						msgEvent.doScan(eventKey, message);
 					} else if (event.equals("VIEW")) {

@@ -39,7 +39,7 @@ public class XMLUtils {
 	}
 
 	public static HashMap<String, Object> doXMLParse(String xml) {
-		if (xml == null)
+		if (xml == null || xml.length() == 0)
 			return null;
 
 		HashMap<String, Object> m = new HashMap<>();

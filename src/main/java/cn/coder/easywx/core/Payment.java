@@ -39,6 +39,26 @@ public final class Payment extends Base {
 		this.notifyUrl = callbackUrl;
 	}
 
+	/**
+	 * 设置加密对象</br>
+	 * <code>public static SSLSocketFactory getSSLSocketFactory(String p12, String p12Pass) {</br>
+		try {</br>
+			KeyStore ks = KeyStore.getInstance("PKCS12");</br>
+			char[] password = p12Pass.toCharArray();</br>
+			InputStream inputStream = WebClient.class.getClassLoader().getResourceAsStream(p12);</br>
+			ks.load(inputStream, password);</br>
+			KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());</br>
+			kmf.init(ks, password);</br>
+			SSLContext ssl = SSLContext.getInstance("TLS");</br>
+			ssl.init(kmf.getKeyManagers(), null, null);</br>
+			return ssl.getSocketFactory();</br>
+		} catch (Exception e) {</br>
+			logger.error("加载证书失败" + p12, e);</br>
+			return null;</br>
+		}</br>
+	}</code>
+	 * @param ssl
+	 */
 	public void setSSLSocketFactory(SSLSocketFactory ssl) {
 		this.ssl = ssl;
 	}
@@ -48,6 +68,8 @@ public final class Payment extends Base {
 			String xml = XMLUtils.deserialize(reader);
 			logger.debug("[Wechat]:" + xml);
 			HashMap<String, Object> result = XMLUtils.doXMLParse(xml);
+			if (result == null)
+				return null;
 			// 退款通知
 			if (result.containsKey("req_info")) {
 				byte[] data = Base64.getDecoder().decode(result.get("req_info").toString());
@@ -182,7 +204,14 @@ public final class Payment extends Base {
 	}
 
 	/**
-	 * 退款申请
+	 * 退款申请</br>
+	 * <code>final Transfer tf = new Transfer();</br>
+			tf.amount = getMoney();</br>
+			tf.desc = "红包提现";</br>
+			tf.openid = openId;</br>
+			tf.partner_trade_no = getNo();</br>
+			tf.check_name = "NO_CHECK";</br>
+			tf.spbill_create_ip = getRemoteAddr();</code>
 	 * 
 	 * @param order
 	 *            退款条件
