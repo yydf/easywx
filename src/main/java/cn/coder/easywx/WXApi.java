@@ -14,6 +14,9 @@ import cn.coder.easywx.core.MP.MsgEvent;
 import cn.coder.easywx.core.MiniProgram;
 import cn.coder.easywx.core.Open;
 import cn.coder.easywx.core.Payment;
+import cn.coder.easywx.core.Third;
+import cn.coder.easywx.core.Third.AuthorEvent;
+import cn.coder.easywx.core.Third.ThirdEvent;
 import cn.coder.easywx.util.XMLUtils;
 
 public class WXApi {
@@ -25,6 +28,8 @@ public class WXApi {
 	private static Open open;
 	// 小程序
 	private static MiniProgram miniProgram;
+	// 第三方平台全网接入
+	private static Third third;
 	// 企业号
 	private static Corporation corp;
 
@@ -47,6 +52,13 @@ public class WXApi {
 		if (logger.isDebugEnabled())
 			logger.debug("Register for mini program success.");
 		return miniProgram;
+	}
+
+	public static Third forThird(String appId, String appSecret, String token, String msgKey) {
+		third = new Third(appId, appSecret, token, msgKey);
+		if (logger.isDebugEnabled())
+			logger.debug("Register for wechat third platforms success.");
+		return third;
 	}
 
 	public static Corporation forCorporation(String corpid, String corpSecret) {
@@ -78,6 +90,12 @@ public class WXApi {
 		if (corp == null)
 			throw new NullPointerException("The corporation can not be null");
 		return corp;
+	}
+
+	public static Third third() {
+		if (third == null)
+			throw new NullPointerException("The third can not be null");
+		return third;
 	}
 
 	public static Payment mpPay() {
@@ -134,6 +152,68 @@ public class WXApi {
 			}
 		} catch (IOException e) {
 			logger.error("Wechat auth faild", e);
+		}
+	}
+
+	public static void author(AuthorEvent event) {
+		try {
+			String postData = XMLUtils.deserialize(event.getReader());
+			logger.debug("[XML]" + postData);
+			String msgSignature = event.getRequestParameter("msg_signature");
+			String timeStamp = event.getRequestParameter("timestamp");
+			String nonce = event.getRequestParameter("nonce");
+			postData = third().decryptMsg(msgSignature, timeStamp, nonce, postData);
+			logger.debug("[DecryptXML]" + postData);
+			HashMap<String, Object> map = XMLUtils.doXMLParse(postData);
+			String infoType = map.get("InfoType") + "";
+			if ("component_verify_ticket".equals(infoType)) {
+				String verifyTicket = map.get("ComponentVerifyTicket") + "";
+				third().setVerifyTicket(verifyTicket);
+			} else if ("authorized".equals(infoType)) {
+				event.authorized(map);
+			} else if ("updateauthorized".equals(infoType)) {
+				event.updateauthorized(map);
+			} else if ("unauthorized".equals(infoType)) {
+				event.unauthorized(map);
+			}
+			event.doResponse("success");
+		} catch (Exception e) {
+			logger.error("Wechat auth faild", e);
+			event.doResponse("fail");
+		}
+	}
+
+	public static void callback(ThirdEvent event) {
+		try {
+			String postData = XMLUtils.deserialize(event.getReader());
+			logger.debug("[XML]" + postData);
+			String msgSignature = event.getRequestParameter("msg_signature");
+			String timeStamp = event.getRequestParameter("timestamp");
+			String nonce = event.getRequestParameter("nonce");
+			postData = third().decryptMsg(msgSignature, timeStamp, nonce, postData);
+			logger.debug("[DecryptXML]" + postData);
+			Map<String, Object> map = XMLUtils.doXMLParse(postData);
+			Map<String, Object> message = new HashMap<>();
+			String msgType = map.get("MsgType").toString();
+			String toUserName = map.get("ToUserName") + "";
+			final String fromUserName = map.get("FromUserName") + "";
+			message.put("FromUserName", toUserName);
+			message.put("ToUserName", fromUserName);
+			if ("text".equals(msgType)) {
+				event.doText(fromUserName, message);
+			} else if ("event".equals(msgType)) {
+
+			}
+			if (message.size() > 0) {
+				message.put("CreateTime", new Date().getTime());
+				String replyMsg = XMLUtils.toXML(message);
+				replyMsg = third().encryptMsg(replyMsg);
+				event.doResponse(replyMsg);
+			} else
+				event.doResponse("success");
+		} catch (Exception e) {
+			logger.error("Wechat callback faild", e);
+			event.doResponse("fail");
 		}
 	}
 

@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import cn.coder.easywx.mapper.Article;
 import cn.coder.easywx.mapper.News;
 import cn.coder.easywx.mapper.SignedURL;
+import cn.coder.easywx.mapper.Token;
 import cn.coder.easywx.util.JSONUtils;
 import cn.coder.easywx.util.SignUtils;
 
@@ -28,12 +29,8 @@ public final class MP extends Base {
 	private final String appId;
 	private final String appSecret;
 	private Payment _pay;
-	private String _token;
-	private long _tokenTime;
-	private String _jsticket;
-	private long _tokenTime2;
-
-	private static final long TIME = 7100 * 1000;
+	private Token _token;
+	private Token _jsToken;
 
 	private static final String URL_TOKEN = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=%s&secret=%s";
 	private static final String URL_JSTICKET = "https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=%s&type=jsapi";
@@ -72,16 +69,15 @@ public final class MP extends Base {
 	}
 
 	public synchronized String getAccessToken() {
-		if (_token == null || (System.currentTimeMillis() - _tokenTime) > TIME) {
+		if (_token == null || _token.passed()) {
 			String json = getJSON(String.format(URL_TOKEN, appId, appSecret));
 			if (valid(json, "access_token")) {
 				logger.debug("[ACCESS_TOKEN]" + json);
-				_token = JSONUtils.getString(json, "access_token");
-				_tokenTime = System.currentTimeMillis();
+				_token = new Token(JSONUtils.getString(json, "access_token"));
 			} else
 				throw new NullPointerException("Not found the access_token");
 		}
-		return _token;
+		return _token.value();
 	}
 
 	public Payment forPayment(String mchId, String apiKey, String callbackUrl) {
@@ -119,15 +115,14 @@ public final class MP extends Base {
 	}
 
 	public synchronized String getJsapiTicket() {
-		if (_jsticket == null || (System.currentTimeMillis() - _tokenTime2) > TIME) {
+		if (_jsToken == null || _jsToken.passed()) {
 			String json = getJSON(String.format(URL_JSTICKET, getAccessToken()));
 			logger.debug("[JSAPI_TICKET]" + json);
 			if (valid(json, "ticket")) {
-				_jsticket = JSONUtils.getString(json, "ticket");
-				_tokenTime2 = System.currentTimeMillis();
+				_jsToken = new Token(JSONUtils.getString(json, "ticket"));
 			}
 		}
-		return _jsticket;
+		return _jsToken.value();
 	}
 
 	public SignedURL signRequestURL(String url) {
