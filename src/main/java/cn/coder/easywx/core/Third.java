@@ -2,8 +2,6 @@ package cn.coder.easywx.core;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,15 +33,15 @@ public class Third extends Base {
 	private final String appSecret;
 	private String verifyTicket;
 	private Token _token;
-	private HashMap<String, Token> accessTokens;
+	private File cacheTicketFile;
+	private File cacheAuthorsFile;
+	private HashMap<String, Token> accessTokens = new HashMap<>();
 	private HashMap<String, String> refreshTokens;
 
 	public Third(String appId, String appSecret, String token, String msgKey) {
 		this.appId = appId;
 		this.appSecret = appSecret;
 		this.msgCrypt = new WXBizMsgCrypt(token, msgKey, appId);
-		this.verifyTicket = getVerifyTicket();
-		this.refreshTokens = getRefreshTokens();
 	}
 
 	private synchronized String getComponentToken() {
@@ -92,29 +90,14 @@ public class Third extends Base {
 		throw new NullPointerException("Not found the pre_auth_code");
 	}
 
-	private String getVerifyTicket() {
-		File file = new File("/home/zdwl/upload/ticket.txt");
-		if (file.exists()) {
-			FileInputStream fr;
-			try {
-				fr = new FileInputStream(file);
-				byte[] temp = new byte[fr.available()];
-				fr.read(temp);
-				this.verifyTicket = new String(temp, "UTF-8");
-				logger.debug("Read ticket:{}", this.verifyTicket);
-			} catch (IOException e) {
-				logger.warn("Read ticket faild", e);
-			}
+	private static String getVerifyTicket(File file) {
+		String ticket = ObjectUtils.readString(file);
+		if (ticket != null) {
+			if (logger.isDebugEnabled())
+				logger.debug("Read ticket from cache:{}", file.getAbsolutePath());
+			return ticket;
 		}
 		return null;
-	}
-
-	public void setVerifyTicket(String ticket) throws IOException {
-		this.verifyTicket = ticket;
-		FileWriter fw = new FileWriter(new File("/home/zdwl/upload/ticket.txt"), false);
-		fw.write(ticket);
-		fw.close();
-		logger.debug("Save ticket:{}", this.verifyTicket);
 	}
 
 	public interface AuthorEvent {
@@ -137,7 +120,17 @@ public class Third extends Base {
 
 		String getRequestParameter(String name);
 
-		void doText(String from, Map<String, Object> message);
+		void doText(String openId, Map<String, Object> message);
+
+		void subscribe(String openId, String eventKey, Map<String, Object> message);
+
+		void click(String openId, String eventKey, Map<String, Object> message);
+
+		void scan(String openId, String eventKey, Map<String, Object> message);
+
+		void view(String openId, Map<String, Object> message);
+
+		void unsubscribe(String openId, Map<String, Object> message);
 
 		void doResponse(String str);
 	}
@@ -154,21 +147,51 @@ public class Third extends Base {
 		String url = String.format(API_QUERY_AUTH, getComponentToken());
 		String json = postString(url, String.format(POST_AUTHCODE, this.appId, authCode));
 		if (valid(json, "authorization_info")) {
+			logger.debug("[AUTHORIZATION_INFO]{}", json);
 			String appId = JSONUtils.getString(json, "authorizer_appid");
 			String refreshToken = JSONUtils.getString(json, "authorizer_refresh_token");
 			this.refreshTokens.put(appId, refreshToken);
 			// 如果缓存成功，返回Appid
-			if (!ObjectUtils.writeObject("/home/zdwl/upload/authors.data", this.refreshTokens))
+			if (ObjectUtils.writeObject(this.cacheAuthorsFile, this.refreshTokens)) {
+				String accessToken = JSONUtils.getString(json, "authorizer_access_token");
+				logger.debug("[AUTHORIZER_ACCESS_TOKEN]{}", accessToken);
+				this.accessTokens.put(appId, new Token(accessToken));
 				return appId;
+			}
 		}
 		throw new NullPointerException("Query auth faild for code '" + authCode + "'");
 	}
 
 	@SuppressWarnings("unchecked")
-	private static HashMap<String, String> getRefreshTokens() {
-		Object obj = ObjectUtils.readObject("/home/zdwl/upload/authors.data");
-		if (obj != null)
+	private static HashMap<String, String> getRefreshTokens(File file) {
+		Object obj = ObjectUtils.readObject(file);
+		if (obj != null) {
+			logger.debug("Load RefreshTokens from cache '{}'", file.getAbsolutePath());
 			return (HashMap<String, String>) obj;
-		return new HashMap<>();
+		}
+		HashMap<String, String> data = new HashMap<>();
+		data.put("wx43d50e2df5d92093", "refreshtoken@@@Ox4Y_yuQKr_8Oqjp7sjWFPfdhUJfcth2JfjbQVyGaAU");
+		data.put("wx570bc396a51b8ff8", "refreshtoken@@@DwaDOitIyn-8tzu80Y1BuR2sAnE8Io5P8C9zo2Bp4hA");
+		return data;
+	}
+
+	public MP mp(String appId2) {
+		return new MP(getAccessToken(appId2));
+	}
+
+	public void forCache(String ticketPath, String authorsPath) {
+		this.cacheTicketFile = new File(ticketPath);
+		this.cacheAuthorsFile = new File(authorsPath);
+		this.verifyTicket = getVerifyTicket(this.cacheTicketFile);
+		this.refreshTokens = getRefreshTokens(this.cacheAuthorsFile);
+	}
+
+	public void setVerifyTicket(String ticket) {
+		if (ticket.equals(this.verifyTicket))
+			return;
+		if (ObjectUtils.writeString(this.cacheTicketFile, ticket)) {
+			this.verifyTicket = ticket;
+			logger.debug("Cached ticket:{}", this.verifyTicket);
+		}
 	}
 }

@@ -98,6 +98,13 @@ public class WXApi {
 		return third;
 	}
 
+	public static MP thirdMp(String appId) {
+		MP mp = third.mp(appId);
+		if (mp == null)
+			throw new NullPointerException("The third mp can not be null");
+		return mp;
+	}
+
 	public static Payment mpPay() {
 		Payment pay = mp.pay();
 		if (pay == null)
@@ -116,7 +123,6 @@ public class WXApi {
 		try {
 			if ("POST".equals(method)) {
 				String authXml = XMLUtils.deserialize(msgEvent.getReader());
-				logger.debug("[XML]" + authXml);
 				HashMap<String, Object> map = XMLUtils.doXMLParse(authXml);
 				String toUserName = map.get("ToUserName") + "";
 				final String fromUserName = map.get("FromUserName") + "";
@@ -158,7 +164,6 @@ public class WXApi {
 	public static void author(AuthorEvent event) {
 		try {
 			String postData = XMLUtils.deserialize(event.getReader());
-			logger.debug("[XML]" + postData);
 			String msgSignature = event.getRequestParameter("msg_signature");
 			String timeStamp = event.getRequestParameter("timestamp");
 			String nonce = event.getRequestParameter("nonce");
@@ -183,13 +188,12 @@ public class WXApi {
 		}
 	}
 
-	public static void callback(ThirdEvent event) {
+	public static void callback(ThirdEvent thirdEvent) {
 		try {
-			String postData = XMLUtils.deserialize(event.getReader());
-			logger.debug("[XML]" + postData);
-			String msgSignature = event.getRequestParameter("msg_signature");
-			String timeStamp = event.getRequestParameter("timestamp");
-			String nonce = event.getRequestParameter("nonce");
+			String postData = XMLUtils.deserialize(thirdEvent.getReader());
+			String msgSignature = thirdEvent.getRequestParameter("msg_signature");
+			String timeStamp = thirdEvent.getRequestParameter("timestamp");
+			String nonce = thirdEvent.getRequestParameter("nonce");
 			postData = third().decryptMsg(msgSignature, timeStamp, nonce, postData);
 			logger.debug("[DecryptXML]" + postData);
 			Map<String, Object> map = XMLUtils.doXMLParse(postData);
@@ -200,20 +204,42 @@ public class WXApi {
 			message.put("FromUserName", toUserName);
 			message.put("ToUserName", fromUserName);
 			if ("text".equals(msgType)) {
-				event.doText(fromUserName, message);
+				String content = map.get("Content") + "";
+				if ("TESTCOMPONENT_MSG_TYPE_TEXT".equals(content)) {
+					message.put("MsgType", "text");
+					message.put("Content", "TESTCOMPONENT_MSG_TYPE_TEXT_callback");
+				} else if (content.startsWith("QUERY_AUTH_CODE:")) {
+					final String authCode = content.substring(16);
+					String appId2 = WXApi.third().queryAuth(authCode);
+					WXApi.thirdMp(appId2).sendText(fromUserName, authCode + "_from_api");
+					message = null;
+				} else
+					thirdEvent.doText(fromUserName, message);
 			} else if ("event".equals(msgType)) {
-
+				String event = map.get("Event") + "";
+				String eventKey = map.get("EventKey") + "";
+				if (event.equals("subscribe")) {
+					thirdEvent.subscribe(fromUserName, eventKey, message);
+				} else if (event.equals("unsubscribe")) {
+					thirdEvent.unsubscribe(fromUserName, message);
+				} else if (event.equals("CLICK")) {
+					thirdEvent.click(fromUserName, eventKey, message);
+				} else if (event.equals("SCAN")) {
+					thirdEvent.scan(fromUserName, eventKey, message);
+				} else if (event.equals("VIEW")) {
+					thirdEvent.view(fromUserName, message);
+				}
 			}
-			if (message.size() > 0) {
-				message.put("CreateTime", new Date().getTime());
-				String replyMsg = XMLUtils.toXML(message);
-				replyMsg = third().encryptMsg(replyMsg);
-				event.doResponse(replyMsg);
+			if (message == null)
+				thirdEvent.doResponse("");
+			else if (message.size() > 2) {
+				String replyMsg = third().encryptMsg(XMLUtils.toXML(message));
+				thirdEvent.doResponse(replyMsg);
 			} else
-				event.doResponse("success");
+				thirdEvent.doResponse("success");
 		} catch (Exception e) {
 			logger.error("Wechat callback faild", e);
-			event.doResponse("fail");
+			thirdEvent.doResponse("fail");
 		}
 	}
 

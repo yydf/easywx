@@ -28,6 +28,7 @@ public final class MP extends Base {
 
 	private final String appId;
 	private final String appSecret;
+	private final String thirdAccessToken; // 第三方平台生成的token
 	private Payment _pay;
 	private Token _token;
 	private Token _jsToken;
@@ -63,12 +64,25 @@ public final class MP extends Base {
 	private static final String POST_SENDALL_NEWS_TAG = "{\"filter\":{\"is_to_all\":false,\"tag_id\":%s},\"mpnews\":{\"media_id\":\"%s\"},\"msgtype\":\"mpnews\",\"send_ignore_reprint\":1}";
 	private static final String POST_SENDALL_NEWS = "{\"filter\":{\"is_to_all\":true},\"mpnews\":{\"media_id\":\"%s\"},\"msgtype\":\"mpnews\",\"send_ignore_reprint\":1}";
 
+	public MP(String token) {
+		this(null, null, token);
+	}
+
 	public MP(String appId, String appSecret) {
+		this(appId, appSecret, null);
+	}
+
+	public MP(String appId, String appSecret, String thirdToken) {
 		this.appId = appId;
 		this.appSecret = appSecret;
+		this.thirdAccessToken = thirdToken;
 	}
 
 	public synchronized String getAccessToken() {
+		if (this.thirdAccessToken != null) {
+			logger.debug("Callable with third platforms token '{}'", this.thirdAccessToken);
+			return this.thirdAccessToken;
+		}
 		if (_token == null || _token.passed()) {
 			String json = getJSON(String.format(URL_TOKEN, appId, appSecret));
 			if (valid(json, "access_token")) {
