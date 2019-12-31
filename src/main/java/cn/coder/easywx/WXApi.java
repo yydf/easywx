@@ -112,6 +112,13 @@ public class WXApi {
 		return pay;
 	}
 
+	public static Payment thirdPay() {
+		Payment pay = third.pay();
+		if (pay == null)
+			throw new NullPointerException("The payment can not be null");
+		return pay;
+	}
+
 	public static Payment appPay() {
 		Payment pay = miniProgram.pay();
 		if (pay == null)
@@ -197,10 +204,10 @@ public class WXApi {
 			postData = third().decryptMsg(msgSignature, timeStamp, nonce, postData);
 			logger.debug("[DecryptXML]" + postData);
 			Map<String, Object> map = XMLUtils.doXMLParse(postData);
-			Map<String, Object> message = new HashMap<>();
 			String msgType = map.get("MsgType").toString();
 			String toUserName = map.get("ToUserName") + "";
 			final String fromUserName = map.get("FromUserName") + "";
+			Map<String, Object> message = new HashMap<>();
 			message.put("FromUserName", toUserName);
 			message.put("ToUserName", fromUserName);
 			if ("text".equals(msgType)) {
@@ -233,7 +240,8 @@ public class WXApi {
 			if (message == null)
 				thirdEvent.doResponse("");
 			else if (message.size() > 2) {
-				String replyMsg = third().encryptMsg(XMLUtils.toXML(message));
+				message.put("CreateTime", timeStamp);
+				String replyMsg = third().encryptMsg(XMLUtils.toXML(message), timeStamp);
 				thirdEvent.doResponse(replyMsg);
 			} else
 				thirdEvent.doResponse("success");

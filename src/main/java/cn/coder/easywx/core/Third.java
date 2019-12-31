@@ -22,6 +22,7 @@ public class Third extends Base {
 	private static final String API_CREATE_PREAUTHCODE = "https://api.weixin.qq.com/cgi-bin/component/api_create_preauthcode?component_access_token=%s";
 	private static final String API_QUERY_AUTH = "https://api.weixin.qq.com/cgi-bin/component/api_query_auth?component_access_token=%s";
 	private static final String API_AUTHORIZER_TOKEN = "https://api.weixin.qq.com/cgi-bin/component/api_authorizer_token?component_access_token=%s";
+	private static final String AIP_GET_OPENID = "https://api.weixin.qq.com/sns/oauth2/component/access_token?appid=%s&code=%s&grant_type=authorization_code&component_appid=%s&component_access_token=%s";
 
 	private static final String POST_TOKEN = "{\"component_appid\":\"%s\",\"component_appsecret\":\"%s\",\"component_verify_ticket\":\"%s\"}";
 	private static final String POST_APPID = "{\"component_appid\":\"%s\"}";
@@ -31,6 +32,7 @@ public class Third extends Base {
 	private final WXBizMsgCrypt msgCrypt;
 	private final String appId;
 	private final String appSecret;
+	private Payment _pay;
 	private String verifyTicket;
 	private Token _token;
 	private File cacheTicketFile;
@@ -135,8 +137,8 @@ public class Third extends Base {
 		void doResponse(String str);
 	}
 
-	public String encryptMsg(String replyMsg) throws AesException {
-		return this.msgCrypt.encryptMsg(replyMsg, getTimestamp() + "", getRandamStr());
+	public String encryptMsg(String replyMsg, String timeStamp) throws AesException {
+		return this.msgCrypt.encryptMsg(replyMsg, timeStamp, getRandamStr());
 	}
 
 	public String decryptMsg(String msgSignature, String timeStamp, String nonce, String postData) throws AesException {
@@ -179,11 +181,17 @@ public class Third extends Base {
 		return new MP(getAccessToken(appId2));
 	}
 
-	public void forCache(String ticketPath, String authorsPath) {
+	public Third forCache(String ticketPath, String authorsPath) {
 		this.cacheTicketFile = new File(ticketPath);
 		this.cacheAuthorsFile = new File(authorsPath);
 		this.verifyTicket = getVerifyTicket(this.cacheTicketFile);
 		this.refreshTokens = getRefreshTokens(this.cacheAuthorsFile);
+		return this;
+	}
+
+	public Payment forPayment(String mchId, String apiKey, String callbackUrl) {
+		this._pay = new Payment(this.appId, mchId, apiKey, callbackUrl);
+		return this._pay;
 	}
 
 	public void setVerifyTicket(String ticket) {
@@ -193,5 +201,18 @@ public class Third extends Base {
 			this.verifyTicket = ticket;
 			logger.debug("Cached ticket:{}", this.verifyTicket);
 		}
+	}
+
+	public String getOpenId(String appId2, String code) {
+		String json = getJSON(String.format(AIP_GET_OPENID, appId2, code, appId, getComponentToken()));
+		if (valid(json, "openid"))
+			return JSONUtils.getString(json, "openid");
+		return null;
+	}
+
+	public Payment pay() {
+		if (this._pay == null)
+			throw new NullPointerException("The payment can not be null");
+		return this._pay;
 	}
 }
