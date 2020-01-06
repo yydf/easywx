@@ -6,7 +6,6 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +20,7 @@ import org.slf4j.LoggerFactory;
 import cn.coder.easywx.util.JSONUtils;
 import cn.coder.easywx.util.XMLUtils;
 
-public class Base {
+public abstract class Base {
 	private static final Logger logger = LoggerFactory.getLogger(Base.class);
 
 	protected static String getRandamStr() {
@@ -29,7 +28,7 @@ public class Base {
 	}
 
 	protected static long getTimestamp() {
-		return new Date().getTime() / 1000;
+		return System.currentTimeMillis() / 1000;
 	}
 
 	protected static String getValue(Map<String, Object> result, String key) {
