@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.coder.easywx.util.JSONUtils;
+import cn.coder.easywx.util.ObjectUtils;
 import cn.coder.easywx.util.XMLUtils;
 
 public abstract class Base {
@@ -110,6 +111,24 @@ public abstract class Base {
 			logger.error("[POST]" + url + " faild,", e);
 		}
 		return sb.toString();
+	}
+
+	protected static byte[] download(String url, String paras) {
+		try {
+			URLConnection connection = new URL(url).openConnection();
+			connection.setDoOutput(true);
+
+			OutputStream outputStream = connection.getOutputStream();
+			outputStream.write(paras.getBytes("utf-8"));
+			outputStream.flush();
+			outputStream.close();
+
+			// 将微信服务器返回的输入流转换成字符串
+			return ObjectUtils.input2byte(connection.getInputStream());
+		} catch (IOException e) {
+			logger.error("[POST]" + url + " faild,", e);
+		}
+		return null;
 	}
 
 	public static String postFile(String urlStr, InputStream inputFile) {

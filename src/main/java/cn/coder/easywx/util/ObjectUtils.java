@@ -1,10 +1,12 @@
 package cn.coder.easywx.util;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
@@ -68,6 +70,27 @@ public class ObjectUtils {
 		} catch (IOException e) {
 			logger.warn("Write String faild", e);
 			return false;
+		}
+	}
+
+	public static byte[] input2byte(InputStream input) throws IOException {
+		if (input == null)
+			return null;
+		byte[] temp = new byte[1024];
+		ByteArrayOutputStream swapStream = null;
+		try {
+			swapStream = new ByteArrayOutputStream();
+			int rc = 0;
+			while ((rc = input.read(temp, 0, temp.length)) > 0) {
+				swapStream.write(temp, 0, rc);
+			}
+			return swapStream.toByteArray();
+		} catch (Exception e) {
+			return null;
+		} finally {
+			input.close();
+			if (swapStream != null)
+				swapStream.close();
 		}
 	}
 

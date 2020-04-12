@@ -3,6 +3,7 @@ package cn.coder.easywx.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.coder.easywx.mapper.Token;
 import cn.coder.easywx.mapper.WXSession;
 import cn.coder.easywx.util.JSONUtils;
 
@@ -10,6 +11,12 @@ public final class MiniProgram extends Base {
 
 	private static final Logger logger = LoggerFactory.getLogger(MiniProgram.class);
 	private static final String URL_CODE2SESSION = "https://api.weixin.qq.com/sns/jscode2session?appid=%s&secret=%s&js_code=%s&grant_type=authorization_code";
+	private static final String URL_TOKEN = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=%s&secret=%s";
+	private static final String URL_WXACODE = "https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=%s";
+	
+	private static final String POST_WXACODE_STR = "{\"scene\": \"%s\", \"page\": \"%s\", \"width\": 430}";
+	
+	private Token _token;
 	private Payment _pay;
 	private final String appId;
 	private final String appSecret;
@@ -43,4 +50,20 @@ public final class MiniProgram extends Base {
 		return null;
 	}
 
+	public synchronized String getAccessToken() {
+		if (_token == null || _token.passed()) {
+			String json = getJSON(String.format(URL_TOKEN, appId, appSecret));
+			if (valid(json, "access_token")) {
+				logger.debug("[ACCESS_TOKEN]" + json);
+				_token = new Token(JSONUtils.getString(json, "access_token"));
+			} else
+				throw new NullPointerException("Not found the access_token");
+		}
+		return _token.value();
+	}
+	
+	public byte[] createWxacode(String sceneStr, String path) {
+		String postStr = String.format(POST_WXACODE_STR, sceneStr, path);
+		return download(String.format(URL_WXACODE, getAccessToken()), postStr);
+	}
 }
