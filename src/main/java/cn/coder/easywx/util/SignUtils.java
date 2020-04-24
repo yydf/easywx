@@ -19,10 +19,10 @@ public class SignUtils {
 
 	public static String decryptData(byte[] data, byte[] key) {
 		try {
-			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS7Padding");
+			Cipher cipher = Cipher.getInstance("AES/ECB/PKCS7Padding", "BC");
 			SecretKeySpec secretKeySpec = new SecretKeySpec(key, "AES");
 			cipher.init(Cipher.DECRYPT_MODE, secretKeySpec);
-			return new String(cipher.doFinal(data));
+			return new String(cipher.doFinal(data), "utf-8");
 		} catch (Exception e) {
 			logger.error("Decrypt data faild", e);
 			return null;

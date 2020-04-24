@@ -1,6 +1,8 @@
 package cn.coder.easywx.core;
 
 import java.io.BufferedReader;
+import java.security.Provider;
+import java.security.Security;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +33,7 @@ public final class Payment extends Base {
 	private final String notifyUrl;
 	private final String appId;
 	private SSLSocketFactory ssl;
+	private Provider securityProvider;
 
 	public Payment(String appId, String mchId, String apiKey, String callbackUrl) {
 		this.appId = appId;
@@ -58,9 +61,17 @@ public final class Payment extends Base {
 		}</br>
 	}</code>
 	 * @param ssl
+	 * @return 
 	 */
-	public void setSSLSocketFactory(SSLSocketFactory ssl) {
+	public Payment setSSLSocketFactory(SSLSocketFactory ssl) {
 		this.ssl = ssl;
+		return this;
+	}
+
+	public void setSecurityProvider(Provider provider) {
+		//添加BouncyCastleProvider，用于解密
+		Security.addProvider(provider);
+		this.securityProvider = provider;
 	}
 
 	public PayResult callback(BufferedReader reader) {
@@ -72,8 +83,10 @@ public final class Payment extends Base {
 				return null;
 			// 退款通知
 			if (result.containsKey("req_info")) {
+				if (securityProvider == null)
+					throw new NullPointerException("The BouncyCastleProvider can not be null");
 				byte[] data = Base64.getDecoder().decode(result.get("req_info").toString());
-				byte[] key = SignUtils.encodeByMD5(this.apiKey).toLowerCase().getBytes();
+				byte[] key = SignUtils.encodeByMD5(this.apiKey).toLowerCase().getBytes("utf-8");
 				String str = SignUtils.decryptData(data, key);
 				logger.debug("[Wechat]" + str);
 				if (str != null) {
