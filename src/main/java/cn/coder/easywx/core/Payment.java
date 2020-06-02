@@ -60,8 +60,9 @@ public final class Payment extends Base {
 			return null;</br>
 		}</br>
 	}</code>
+	 * 
 	 * @param ssl
-	 * @return 
+	 * @return
 	 */
 	public Payment setSSLSocketFactory(SSLSocketFactory ssl) {
 		this.ssl = ssl;
@@ -69,15 +70,20 @@ public final class Payment extends Base {
 	}
 
 	public void setSecurityProvider(Provider provider) {
-		//添加BouncyCastleProvider，用于解密
+		// 添加BouncyCastleProvider，用于解密
 		Security.addProvider(provider);
 		this.securityProvider = provider;
 	}
 
 	public PayResult callback(BufferedReader reader) {
+		String xml = XMLUtils.deserialize(reader);
+		logger.debug("[Wechat]:" + xml);
+		return callback(xml);
+	}
+
+	public PayResult callback(String xml) {
 		try {
-			String xml = XMLUtils.deserialize(reader);
-			logger.debug("[Wechat]:" + xml);
+
 			HashMap<String, Object> result = XMLUtils.doXMLParse(xml);
 			if (result == null)
 				return null;
