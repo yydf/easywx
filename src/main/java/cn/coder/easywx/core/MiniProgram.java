@@ -13,6 +13,7 @@ public final class MiniProgram extends Base {
 	private static final String URL_CODE2SESSION = "https://api.weixin.qq.com/sns/jscode2session?appid=%s&secret=%s&js_code=%s&grant_type=authorization_code";
 	private static final String URL_TOKEN = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=%s&secret=%s";
 	private static final String URL_WXACODE = "https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=%s";
+	private static final String URL_SEND_TEMPLATE = "https://api.weixin.qq.com/cgi-bin/message/wxopen/template/send?access_token=%s";
 	
 	private static final String POST_WXACODE_STR = "{\"scene\": \"%s\", \"page\": \"%s\", \"width\": 430}";
 	
@@ -65,5 +66,19 @@ public final class MiniProgram extends Base {
 	public byte[] createWxacode(String sceneStr, String path) {
 		String postStr = String.format(POST_WXACODE_STR, sceneStr, path);
 		return download(String.format(URL_WXACODE, getAccessToken()), postStr);
+	}
+
+	public Long sendTemplate(String templateJson) {
+		String postUrl = String.format(URL_SEND_TEMPLATE, getAccessToken());
+		String json = postString(postUrl, templateJson);
+		logger.debug("[SEND_TEMPLATE]" + json);
+		if (valid(json, "msgid"))
+			return JSONUtils.getLong(json, "msgid");
+		// 判断是不是token无效，发送模板消息会误报token无效
+		if (invalidToken(json)) {
+			_token = null;// 清空缓存token
+			return sendTemplate(templateJson); // 重新发送
+		}
+		return null;
 	}
 }

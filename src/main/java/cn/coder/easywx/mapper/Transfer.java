@@ -11,5 +11,8 @@ public class Transfer {
 	public String spbill_create_ip;
 	public String payment_no;
 	public String payment_time;
+	
+	//只有失败的时候才赋值
+	public String error;
 
 }

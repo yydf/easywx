@@ -57,6 +57,7 @@ public final class MP extends Base {
 	private static final String POST_STR_SENCE = "{\"expire_seconds\": %s, \"action_name\": \"QR_STR_SCENE\", \"action_info\": {\"scene\": {\"scene_str\": \"%s\"}}}";
 	private static final String POST_LIMIT_STR_SENCE = "{\"action_name\": \"QR_LIMIT_STR_SCENE\", \"action_info\": {\"scene\": {\"scene_str\": \"%s\"}}}";
 	private static final String POST_SEND_TEXT = "{\"touser\":\"%s\",\"msgtype\":\"text\",\"text\":{\"content\":\"%s\"}}";
+	private static final String POST_SEND_IMAGE = "{\"touser\":\"%s\",\"msgtype\":\"image\",\"image\":{\"media_id\":\"%s\"}}";
 	private static final String POST_SEND_ARTICLE = "{\"touser\":\"%s\",\"msgtype\":\"news\",\"news\":{\"articles\":[%s]}}";
 	private static final String POST_NEWS = "{\"articles\":[%s]}";
 	private static final String POST_UPDATE_NEWS = "{\"media_id\":\"%s\",\"index\":%s,\"articles\":%s}";
@@ -246,6 +247,12 @@ public final class MP extends Base {
 
 	public void sendText(String openId, String text) {
 		String postStr = String.format(POST_SEND_TEXT, openId, text);
+		String json = postString(String.format(URL_CUSTOM_SEND, getAccessToken()), postStr);
+		logger.debug("[SEND_TEXT]{}", json);
+	}
+
+	public void sendImage(String openId, String mediaId) {
+		String postStr = String.format(POST_SEND_IMAGE, openId, mediaId);
 		String json = postString(String.format(URL_CUSTOM_SEND, getAccessToken()), postStr);
 		logger.debug("[SEND_TEXT]{}", json);
 	}

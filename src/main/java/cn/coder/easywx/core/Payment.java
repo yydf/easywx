@@ -369,7 +369,9 @@ public final class Payment extends Base {
 				tf.payment_time = getValue(map, "payment_time");
 				return true;
 			}
+			tf.error = getValue(map, "return_msg");
 		} catch (Exception e) {
+			tf.error = e.getMessage();
 			logger.error("Transfers faild", e);
 		}
 		return false;
