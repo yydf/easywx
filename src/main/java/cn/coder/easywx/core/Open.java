@@ -5,6 +5,11 @@ import org.slf4j.LoggerFactory;
 
 import cn.coder.easywx.util.JSONUtils;
 
+/**
+ * 开放平台
+ * @author YYDF
+ *
+ */
 public final class Open extends Base {
 
 	private static final Logger logger = LoggerFactory.getLogger(Open.class);

@@ -6,6 +6,11 @@ import org.slf4j.LoggerFactory;
 import cn.coder.easywx.mapper.Token;
 import cn.coder.easywx.util.JSONUtils;
 
+/**
+ * 企业号
+ * @author YYDF
+ *
+ */
 public final class Corporation extends Base {
 
 	private static final Logger logger = LoggerFactory.getLogger(Corporation.class);

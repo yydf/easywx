@@ -7,6 +7,11 @@ import cn.coder.easywx.mapper.Token;
 import cn.coder.easywx.mapper.WXSession;
 import cn.coder.easywx.util.JSONUtils;
 
+/**
+ * 微信小程序
+ * @author YYDF
+ *
+ */
 public final class MiniProgram extends Base {
 
 	private static final Logger logger = LoggerFactory.getLogger(MiniProgram.class);

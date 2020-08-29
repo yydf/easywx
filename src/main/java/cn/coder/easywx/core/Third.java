@@ -15,7 +15,12 @@ import cn.coder.easywx.mapper.Token;
 import cn.coder.easywx.util.JSONUtils;
 import cn.coder.easywx.util.ObjectUtils;
 
-public class Third extends Base {
+/**
+ * 公众号服务商
+ * @author YYDF
+ *
+ */
+public final class Third extends Base {
 	private static final Logger logger = LoggerFactory.getLogger(Third.class);
 
 	private static final String API_COMPONENT_TOKEN = "https://api.weixin.qq.com/cgi-bin/component/api_component_token";
