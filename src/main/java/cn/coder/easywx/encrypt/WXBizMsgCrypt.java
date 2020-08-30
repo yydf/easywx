@@ -54,9 +54,6 @@ public class WXBizMsgCrypt
 	 *            公众平台上，开发者设置的EncodingAESKey
 	 * @param appId
 	 *            公众平台appid
-	 * 
-	 * @throws AesException
-	 *             执行失败，请查看该异常的错误码和具体的错误信息
 	 */
 	public WXBizMsgCrypt(String token, String encodingAesKey, String appId)
 	{

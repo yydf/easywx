@@ -21,6 +21,11 @@ import cn.coder.easywx.mapper.UnifiedOrder;
 import cn.coder.easywx.util.SignUtils;
 import cn.coder.easywx.util.XMLUtils;
 
+/**
+ * 微信支付
+ * @author YYDF
+ *
+ */
 public final class Payment extends Base {
 	private static final Logger logger = LoggerFactory.getLogger(Payment.class);
 	private static final String URL_CREATE_UNIFIEDORDER = "https://api.mch.weixin.qq.com/pay/unifiedorder";
@@ -43,29 +48,24 @@ public final class Payment extends Base {
 	}
 
 	/**
-	 * 设置加密对象</br>
-	 * <code>public static SSLSocketFactory getSSLSocketFactory(String p12, String p12Pass) {</br>
-		try {</br>
-			KeyStore ks = KeyStore.getInstance("PKCS12");</br>
-			char[] password = p12Pass.toCharArray();</br>
-			InputStream inputStream = WebClient.class.getClassLoader().getResourceAsStream(p12);</br>
-			ks.load(inputStream, password);</br>
-			KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());</br>
-			kmf.init(ks, password);</br>
-			SSLContext ssl = SSLContext.getInstance("TLS");</br>
-			ssl.init(kmf.getKeyManagers(), null, null);</br>
-			return ssl.getSocketFactory();</br>
-		} catch (Exception e) {</br>
-			logger.error("加载证书失败" + p12, e);</br>
-			return null;</br>
-		}</br>
-	}</code>
+	 * 设置加密对象
 	 * 
-	 * @param ssl
-	 * @return
+	 * @param ssl 加密后的Socket
+	 * @return 支付对象，实现链式调用
 	 */
 	public Payment setSSLSocketFactory(SSLSocketFactory ssl) {
 		this.ssl = ssl;
+		return this;
+	}
+	
+	/**
+	 * 设置加密对象
+	 * @param p12 p12文件路径
+	 * @param p12Pass p12文件密码
+	 * @return 支付对象，实现链式调用
+	 */
+	public Payment setSSLSocketFactory(String p12, String p12Pass) {
+		this.ssl = SignUtils.getSSLSocketFactory(p12, p12Pass);
 		return this;
 	}
 
@@ -143,7 +143,7 @@ public final class Payment extends Base {
 	/**
 	 * 创建预付单
 	 * 
-	 * @param order
+	 * @param order 订单参数
 	 * @return 预付单所需参数
 	 */
 	public Map<String, Object> createUnifiedOrder(UnifiedOrder order) {
@@ -223,14 +223,7 @@ public final class Payment extends Base {
 	}
 
 	/**
-	 * 退款申请</br>
-	 * <code>final Transfer tf = new Transfer();</br>
-			tf.amount = getMoney();</br>
-			tf.desc = "红包提现";</br>
-			tf.openid = openId;</br>
-			tf.partner_trade_no = getNo();</br>
-			tf.check_name = "NO_CHECK";</br>
-			tf.spbill_create_ip = getRemoteAddr();</code>
+	 * 退款申请
 	 * 
 	 * @param order
 	 *            退款条件
@@ -301,7 +294,7 @@ public final class Payment extends Base {
 	 * 
 	 * @param billNo
 	 *            订单号
-	 * @return
+	 * @return 红包状态
 	 */
 	public RedpackStatus redpackStatus(String billNo) {
 		try {

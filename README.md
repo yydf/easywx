@@ -2,7 +2,7 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/cn.4coder/easywx/badge.svg)](https://maven-badges.herokuapp.com/maven-central/cn.4coder/easywx/)
 [![GitHub release](https://img.shields.io/github/release/yydf/easywx.svg)](https://github.com/yydf/easywx/releases)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://raw.githubusercontent.com/yydf/easywx/master/LICENSE)
-![Jar Size](https://img.shields.io/badge/jar--size-36.8k-blue.svg)
+![Jar Size](https://img.shields.io/badge/jar--size-57.0k-blue.svg)
 
 环境
 -------------

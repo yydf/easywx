@@ -1,6 +1,8 @@
 package cn.coder.easywx.util;
 
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Formatter;
@@ -9,6 +11,9 @@ import java.util.TreeMap;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,6 +92,23 @@ public class SignUtils {
 			sha1MD.update(str.getBytes(), 0, str.length());
 		}
 		return byteToHex(sha1MD.digest());
+	}
+
+	public static SSLSocketFactory getSSLSocketFactory(String p12, String p12Pass) {
+		try {
+			KeyStore ks = KeyStore.getInstance("PKCS12");
+			char[] password = p12Pass.toCharArray();
+			InputStream inputStream = SignUtils.class.getClassLoader().getResourceAsStream(p12);
+			ks.load(inputStream, password);
+			KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+			kmf.init(ks, password);
+			SSLContext ssl = SSLContext.getInstance("TLS");
+			ssl.init(kmf.getKeyManagers(), null, null);
+			return ssl.getSocketFactory();
+		} catch (Exception e) {
+			logger.error("加载证书失败" + p12, e);
+			return null;
+		}
 	}
 
 }
