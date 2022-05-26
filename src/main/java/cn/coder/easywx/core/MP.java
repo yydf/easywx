@@ -52,6 +52,10 @@ public final class MP extends Base {
 	private static final String URL_ADD_MATERIAL = "https://api.weixin.qq.com/cgi-bin/material/add_material?access_token=%s&type=%s";
 	private static final String URL_SENDALL_NEWS = "https://api.weixin.qq.com/cgi-bin/message/mass/sendall?access_token=%s";
 
+	private static final String URL_DRAFT_ADD = "https://api.weixin.qq.com/cgi-bin/draft/add?access_token=%s";
+	private static final String URL_DRAFT_UPDATE = "https://api.weixin.qq.com/cgi-bin/draft/update?access_token=%s";
+	private static final String URL_FREE_PUBLISH = "https://api.weixin.qq.com/cgi-bin/freepublish/submit?access_token=%s";
+
 	private static final String POST_SENCE = "{\"expire_seconds\": %s, \"action_name\": \"QR_SCENE\", \"action_info\": {\"scene\": {\"scene_id\": %s}}}";
 	private static final String POST_LIMIT_SENCE = "{\"action_name\": \"QR_LIMIT_SCENE\", \"action_info\": {\"scene\": {\"scene_id\": %s}}}";
 	private static final String POST_STR_SENCE = "{\"expire_seconds\": %s, \"action_name\": \"QR_STR_SCENE\", \"action_info\": {\"scene\": {\"scene_str\": \"%s\"}}}";
@@ -89,8 +93,10 @@ public final class MP extends Base {
 			if (valid(json, "access_token")) {
 				logger.debug("[ACCESS_TOKEN]" + json);
 				_token = new Token(JSONUtils.getString(json, "access_token"));
-			} else
+			} else{
+				logger.debug("[RESULT]" + json);
 				throw new NullPointerException("Not found the access_token");
+			}
 		}
 		return _token.value();
 	}
@@ -299,6 +305,7 @@ public final class MP extends Base {
 	 *            图文的内容
 	 * @return 上传成功后的media_id，失败返回null
 	 */
+	@Deprecated
 	public String addNews(List<News> news) {
 		for (News item : news) {
 			if (item.thumb_media_id.startsWith("http://") || item.thumb_media_id.startsWith("https://")) {
@@ -318,7 +325,28 @@ public final class MP extends Base {
 			return JSONUtils.getString(json, "media_id");
 		return null;
 	}
+	
+	public String addDraft(List<News> news) {
+		for (News item : news) {
+			if (item.thumb_media_id.startsWith("http://") || item.thumb_media_id.startsWith("https://")) {
+				try {
+					item.thumb_media_id = addMaterial("image", new URL(item.thumb_media_id).openStream());
+				} catch (IOException e) {
+					throw new RuntimeException("add material faild", e);
+				}
+				if (item.thumb_media_id == null)
+					throw new RuntimeException("Convert thumb_media_id from url faild");
+			}
+		}
+		String postStr = String.format(POST_NEWS, toJson(news));
+		String json = postString(String.format(URL_DRAFT_ADD, getAccessToken()), postStr);
+		logger.debug("[ADD_DRAFT]{}", json);
+		if (valid(json, "media_id"))
+			return JSONUtils.getString(json, "media_id");
+		return null;
+	}
 
+	@Deprecated
 	public boolean updateNews(String mediaId, int index, News item) {
 		if (item.thumb_media_id.startsWith("http://") || item.thumb_media_id.startsWith("https://")) {
 			try {
@@ -332,6 +360,22 @@ public final class MP extends Base {
 		String postStr = String.format(POST_UPDATE_NEWS, mediaId, index, item.toString());
 		String json = postString(String.format(URL_MEDIA_UPDATENEWS, getAccessToken()), postStr);
 		logger.debug("[UPDATE_NEWS]{}", json);
+		return json != null && JSONUtils.getLong(json, "errcode") == 0L;
+	}
+	
+	public boolean updateDraft(String mediaId, int index, News item) {
+		if (item.thumb_media_id.startsWith("http://") || item.thumb_media_id.startsWith("https://")) {
+			try {
+				item.thumb_media_id = addMaterial("image", new URL(item.thumb_media_id).openStream());
+			} catch (IOException e) {
+				throw new RuntimeException("add material faild", e);
+			}
+			if (item.thumb_media_id == null)
+				throw new RuntimeException("Convert thumb_media_id from url faild");
+		}
+		String postStr = String.format(POST_UPDATE_NEWS, mediaId, index, item.toString());
+		String json = postString(String.format(URL_DRAFT_UPDATE, getAccessToken()), postStr);
+		logger.debug("[UPDATE_DRAFT]{}", json);
 		return json != null && JSONUtils.getLong(json, "errcode") == 0L;
 	}
 
@@ -349,6 +393,15 @@ public final class MP extends Base {
 		String json = postString(String.format(URL_PREVIEW_NEWS, getAccessToken()), postStr);
 		logger.debug("[PREVIEW_NEWS]{}", json);
 		return json != null && JSONUtils.getLong(json, "errcode") == 0L;
+	}
+	
+	public String freePublish(String mediaId) {
+		String postStr = String.format("{\"media_id\":\"%s\"}", mediaId);
+		String json = postString(String.format(URL_FREE_PUBLISH, getAccessToken()), postStr);
+		logger.debug("[FREE_PUBLISH]{}", json);
+		if (valid(json, "publish_id"))
+			return JSONUtils.getString(json, "publish_id");
+		return null;
 	}
 
 	/**

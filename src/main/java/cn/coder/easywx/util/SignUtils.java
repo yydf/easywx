@@ -1,5 +1,6 @@
 package cn.coder.easywx.util;
 
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.KeyStore;
@@ -98,7 +99,12 @@ public class SignUtils {
 		try {
 			KeyStore ks = KeyStore.getInstance("PKCS12");
 			char[] password = p12Pass.toCharArray();
-			InputStream inputStream = SignUtils.class.getClassLoader().getResourceAsStream(p12);
+			InputStream inputStream;
+			//如果文件中发现路径
+			if (p12.contains("/") || p12.contains("\\"))
+				inputStream = new FileInputStream(p12);
+			else
+				inputStream = SignUtils.class.getClassLoader().getResourceAsStream(p12);
 			ks.load(inputStream, password);
 			KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
 			kmf.init(ks, password);
