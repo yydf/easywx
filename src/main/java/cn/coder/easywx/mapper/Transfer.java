@@ -24,4 +24,12 @@ public class Transfer {
 		return t;
 	}
 
+	@Override
+	public String toString() {
+		return "Transfer [partner_trade_no=" + partner_trade_no + ", openid=" + openid + ", check_name=" + check_name
+				+ ", re_user_name=" + re_user_name + ", amount=" + amount + ", desc=" + desc + ", spbill_create_ip="
+				+ spbill_create_ip + ", payment_no=" + payment_no + ", payment_time=" + payment_time + ", error="
+				+ error + "]";
+	}
+
 }
